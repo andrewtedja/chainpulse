@@ -1,0 +1,25 @@
+version: "3.8"
+
+# services -> tempat definition all app component
+services:
+    backend:
+        build: ./backend # membuat image dari dockerfile
+        ports:
+            - "8000:8000"
+
+        volumes: # important, synchronize code local ke container in real-time
+            - ./backend:/app
+        env_file:
+            - ./backend/.env
+        restart: always
+    frontend:
+        build: ./frontend
+        ports:
+            - "3001:3000"
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        # important, make sure 'backend' jalan dulu sebelum 'frontend' jalan
+        depends_on:
+            - backend
+        restart: always
