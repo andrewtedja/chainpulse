@@ -1,0 +1,15 @@
+# IDEs and OS-generated files
+.DS_Store
+.env
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Next.js
+.next/
+node_modules/
+out/
