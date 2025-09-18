@@ -13,3 +13,4 @@ venv/
 .next/
 node_modules/
 out/
+flow.md
