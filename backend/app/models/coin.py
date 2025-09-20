@@ -10,6 +10,7 @@ class Coin(Base):
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, unique=True, index=True, nullable=False)
     name = Column(String)
+    image = Column(String)
 
     news = relationship(
         "News",
