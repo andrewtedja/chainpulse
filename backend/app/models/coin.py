@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, func, DateTime
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -8,9 +8,12 @@ class Coin(Base):
     __tablename__ = "coins"
 
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String)
-    image = Column(String)
+    symbol = Column(String, unique=True, index=True, nullable=False)  # BTC, ETH
+    name = Column(String)  # Bitcoin, Ethereum
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     news = relationship(
         "News",
