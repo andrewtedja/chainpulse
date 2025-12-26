@@ -4,6 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from app.db.base import Base
 
+# Import all models so Alembic can detect them
+from app.models import News, Coin, FetchMetadata, news_coin_association
 
 from alembic import context
 from dotenv import load_dotenv
