@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from .database import get_db, Base, engine
-from . import models
+from .db.database import get_db, Base, engine
+from .models import models
 
 app = FastAPI()
 

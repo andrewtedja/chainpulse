@@ -33,6 +33,31 @@ class ApiArticle(BaseModel):
 load_dotenv()
 CRYPTO_PANIC_API_KEY = os.getenv("CRYPTO_PANIC_API_KEY")
 
+from app.models.news import News
+from app.models.coin import Coin
+
+async def save_news_to_db(session: AsyncSession, articles: List[ApiArticle]):
+    for art in articles:
+        news_row = News(
+            url=str(art.url),
+            title=art.title,
+            published_at=art.published_at,
+            sentiment_score=art.sentiment_score,
+            sentiment_label=art.sentiment_label,
+            sentiment_norm=art.sentiment_norm,
+            source={},  # kalau ada object source JSON
+        )
+        session.add(news_row)
+        await session.flush()  # supaya news_row.id terisi
+
+        if art.coin_ids:
+            coins = await session.execute(
+                select(Coin).where(Coin.id.in_(art.coin_ids))
+            )
+            news_row.coins.extend(coins.scalars().all())  # ini otomatis isi news_coin
+    await session.commit()
+
+
 # POPULATE COIN IDS (capture currencies -> primary key and coin rows)
 async def attach_coin_ids(session: AsyncSession, article: ApiArticle) -> ApiArticle:
     # ticker codes -> ["BTC", "ETH", "USDT"]
@@ -49,12 +74,4 @@ async def attach_coin_ids(session: AsyncSession, article: ApiArticle) -> ApiArti
     article.coin_ids = [symbol_id_mapping[ticker_codes] for code in ticker_codes if code in symbol_id_mapping]
 
 
-    
 
-
-
-
-# Kamu bisa membuat fungsi utama untuk menjalankan pipeline ini
-async def run_ingestion(session: AsyncSession):
-    news = await fetch_news_from_api()
-    await save_news_to_db(session, news)
