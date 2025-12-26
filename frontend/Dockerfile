@@ -1,11 +1,10 @@
-
-FROM node:20-bullseye
+FROM oven/bun:1
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json bun.lockb* ./
 
-RUN npm install --include=optional --legacy-peer-deps && npm rebuild lightningcss
+RUN bun install
 
 COPY . .
 
@@ -13,4 +12,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD ["bun", "run", "dev"]
