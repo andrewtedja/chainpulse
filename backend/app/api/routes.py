@@ -4,11 +4,64 @@ from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime
 import requests
 import os
-
+from ..ml.SentimentAnalyzer import SentimentAnalyzer
 from ..db.database import get_db
 from ..models import News, FetchMetadata
 
+# ================== TESTS ==================
+# curl -X POST http://localhost:8000/api/news/refresh
+# curl "http://localhost:8000/api/news?page=1&limit=20"
+# curl "http://localhost:8000/api/news?page=2&limit=20"
+
+# ================== ROUTES ==================
+
 router = APIRouter()
+analyzer = SentimentAnalyzer()
+
+@router.get("/api/news")
+def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
+  """GET paginated news + sentimentnya"""
+
+  # Validation
+  if page < 1:
+    raise HTTPException(400, "Page must be >= 1!")
+  if limit > 50:
+    raise HTTPException(400, "Limit max 50!")
+
+  # Offset calc
+  offset = (page - 1) * limit
+
+  news = db.query(News)\
+    .order_by(News.published_at.desc())\
+    .offset(offset)\
+    .limit(limit)\
+    .all()
+
+  total = db.query(News).count()
+
+  return {
+      "data": [
+          {
+              "id": n.id,
+              "title": n.title,
+              "content": n.content,
+              "published_at": n.published_at.isoformat() if n.published_at else None,
+              "sentiment_score": n.sentiment_score,
+              "sentiment_label": n.sentiment_label,
+              "created_at": n.created_at.isoformat()
+          }
+          for n in news
+      ],
+      "pagination": {
+          "page": page,
+          "limit": limit,
+          "total": total,
+          "total_pages": (total + limit - 1) // limit
+      }
+  }
+
+
+
 
 @router.post("/api/news/refresh")
 def refresh_news(db: Session = Depends(get_db)):
@@ -17,11 +70,12 @@ def refresh_news(db: Session = Depends(get_db)):
 
     NOTES Flow:
     1. Call CryptoPanic API
-    2. Parse response
+    2. Parse response -> Analyze sentiment biar dimasukin label+score
     3. Insert news to DB (skip duplicates based on title+published_at)
     4. Track fetch metadata
     5. Return stats
     """
+
 
     # 1. Fetch from CryptoPanic
     api_url = os.getenv("CRYPTO_PANIC_BASE_URL")
@@ -66,6 +120,16 @@ def refresh_news(db: Session = Depends(get_db)):
             "published_at": published_at,
             "source": {},  # temp empty (soalnya API doesn't return by default)
         }
+
+        # FINBERT
+        text = news_data["content"] or news_data["title"]
+        sentiment_result = analyzer.analyze(text)
+
+        sentiment = sentiment_result[0] if isinstance(sentiment_result, list) else sentiment_result
+
+        news_data["sentiment_score"] = sentiment["score"]
+        news_data["sentiment_label"] = sentiment["label"]
+
 
         # Insert with conflict handling (skip if duplicate title+published_at)
         stmt = insert(News).values(**news_data)
