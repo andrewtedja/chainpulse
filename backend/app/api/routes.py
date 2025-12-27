@@ -3,12 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime, timedelta
 from sqlalchemy import func, case
-from datetime import datetime
+from datetime import datetime, timezone
 import requests
 import os
+import json
 from ..ml.SentimentAnalyzer import SentimentAnalyzer
 from ..db.database import get_db
 from ..models import News, FetchMetadata
+from ..core.redis import get_redis
 
 '''
 NOTES (endpoints)
@@ -26,8 +28,20 @@ router = APIRouter()
 analyzer = SentimentAnalyzer()
 
 @router.get("/api/news")
-def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
-  """GET paginated news + sentimentnya"""
+def get_news(
+    page: int = 1,
+    limit: int = 12,
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
+):
+  """
+  GET paginated news + sentimentnya
+
+  Caching Strategy:
+  - Cache key: news:page:{page}:limit:{limit}
+  - TTL: 300 seconds (5 minutes)
+  - Invalidated on: POST /api/news/refresh
+  """
 
   # Validation
   if page < 1:
@@ -35,7 +49,19 @@ def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
   if limit > 50:
     raise HTTPException(400, "Limit max 50!")
 
-  # Offset calc
+  # Check cache
+  cache_key = f"news:page:{page}:limit:{limit}"
+
+  if redis:
+      try:
+          cached = redis.get(cache_key)
+          if cached:
+              # HIT
+              return json.loads(cached)
+      except Exception as e:
+          print(f"Redis GET error: {e}")
+
+  # MISS -> fetch from DB
   offset = (page - 1) * limit
 
   news = db.query(News)\
@@ -46,7 +72,7 @@ def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
 
   total = db.query(News).count()
 
-  return {
+  response = {
       "data": [
           {
               "id": n.id,
@@ -67,8 +93,21 @@ def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
       }
   }
 
+  # Store in cache for next request
+  if redis:
+      try:
+          redis.set(
+              cache_key,
+              json.dumps(response),
+              ex=300  # TTL: 5 minutes
+          )
+      except Exception as e:
+          print(f"Redis SET error: {e}")
+
+  return response
+
 @router.post("/api/news/refresh")
-def refresh_news(db: Session = Depends(get_db)):
+def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
     """
     Fetch news from CryptoPanic API -> store in db.
 
@@ -77,7 +116,8 @@ def refresh_news(db: Session = Depends(get_db)):
     2. Parse response -> Analyze sentiment biar dimasukin label+score
     3. Insert news to DB (skip duplicates based on title+published_at)
     4. Track fetch metadata
-    5. Return stats
+    5. Invalidate news + sentiment caches
+    6. Return stats
     """
 
 
@@ -152,7 +192,7 @@ def refresh_news(db: Session = Depends(get_db)):
 
     db.commit()
 
-    # 3: Track fetch metadata
+    # TRACK FETCH METADATA
     metadata = FetchMetadata(
         source="cryptopanic",
         articles_fetched=new_count,
@@ -160,6 +200,25 @@ def refresh_news(db: Session = Depends(get_db)):
     )
     db.add(metadata)
     db.commit()
+
+    # INVALIDATE CACHE
+    if redis:
+        try:
+            # Clear all news pagination caches (pattern: news:page:*)
+            # For prod: track active cache keys or use Redis SCAN if available
+
+            # Clear first 10 pages
+            for page in range(1, 11):
+                for limit in [12, 20, 50]:
+                    redis.delete(f"news:page:{page}:limit:{limit}")
+
+            # Clear sentiment caches
+            for period in ["24h", "7d", "30d", "all"]:
+                redis.delete(f"sentiment:period:{period}")
+
+            print(f"Cache invalidated after refresh")
+        except Exception as e:
+            print(f"Redis cache invalidation error: {e}")
 
     return {
         "status": "success",
@@ -186,7 +245,7 @@ def get_market_sentiment(
     """
 
     # Calculate cutoff based on period
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if period == "24h":
         cutoff = now - timedelta(hours=24)
@@ -199,7 +258,7 @@ def get_market_sentiment(
     else:
         raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
 
-    # Build query with optional date filter
+    # Query with optional date filter
     query = db.query(
         func.count(News.id).label("total"),
         func.avg(News.sentiment_score).label("avg_score"),
@@ -231,14 +290,14 @@ def get_market_sentiment(
         }
 
     # Calculate percentages
-    positive_pct = (result.positive_count / total) * 100
-    neutral_pct = (result.neutral_count / total) * 100
-    negative_pct = (result.negative_count / total) * 100
+    positive_percentage = (result.positive_count / total) * 100
+    neutral_percentage = (result.neutral_count / total) * 100
+    negative_percentage = (result.negative_count / total) * 100
 
-    # Determine market state
-    if positive_pct > 50:
+    # Determine bullish/bearish/neutral
+    if positive_percentage > 50:
         market_state = "bullish"
-    elif negative_pct > 50:
+    elif negative_percentage > 50:
         market_state = "bearish"
     else:
         market_state = "neutral"
@@ -247,9 +306,9 @@ def get_market_sentiment(
         "market_state": market_state,
         "avg_sentiment": round(float(result.avg_score or 0), 4),
         "distribution": {
-            "positive": round(positive_pct, 2),
-            "neutral": round(neutral_pct, 2),
-            "negative": round(negative_pct, 2)
+            "positive": round(positive_percentage, 2),
+            "neutral": round(neutral_percentage, 2),
+            "negative": round(negative_percentage, 2)
         },
         "total_articles": total,
         "period": period
