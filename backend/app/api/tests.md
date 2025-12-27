@@ -9,20 +9,20 @@ curl -X POST http://localhost:8000/api/news/refresh
 curl "http://localhost:8000/api/news?page=1&limit=20"
 curl "http://localhost:8000/api/news?page=2&limit=20"
 
-## Get current sentiment
+## Get sentiment aggregate
 
 ### Default 24h
 
-curl "http://localhost:8000/api/sentiment/current"
+curl "http://localhost:8000/api/sentiment/aggregate"
 
 ### Last 7 days
 
-curl "http://localhost:8000/api/sentiment/current?period=7d"
+curl "http://localhost:8000/api/sentiment/aggregate?period=7d"
 
 ### Last 30 days
 
-curl "http://localhost:8000/api/sentiment/current?period=30d"
+curl "http://localhost:8000/api/sentiment/aggregate?period=30d"
 
 ### All time
 
-curl "http://localhost:8000/api/sentiment/current?period=all"
+curl "http://localhost:8000/api/sentiment/aggregate?period=all"

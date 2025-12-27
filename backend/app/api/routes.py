@@ -227,91 +227,118 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         "skipped": len(articles) - new_count
     }
 
-@router.get("/api/sentiment/current")
+@router.get("/api/sentiment/aggregate")
 def get_market_sentiment(
     period: str = "24h",  # "24h", "7d", "30d", "all"
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
 ):
-    """
-    Get overall market sentiment for specified period.
+  """
+  Get overall market sentiment for specified period.
 
-    Query params:
-    - period: "24h" (default), "7d", "30d", "all"
+  Query params:
+  - period: "24h" (default), "7d", "30d", "all"
 
-    Returns:
-    - Distribution: % positive/neutral/negative
-    - Average sentiment score
-    - Market state: Bullish/Neutral/Bearish
-    """
+  Returns:
+  - Distribution: % positive/neutral/negative
+  - Average sentiment score
+  - Market state: Bullish/Neutral/Bearish
+  """
+  cache_key = f"sentiment:period:{period}"
+  if redis:
+    try:
+      cached = redis.get(cache_key)
+      if cached:
+        # HIT
+        return json.loads(cached)
+    except Exception as e:
+      print(f"Redis GET error: {e}")
 
-    # Calculate cutoff based on period
-    now = datetime.now(timezone.utc)
+  # MISS
 
-    if period == "24h":
-        cutoff = now - timedelta(hours=24)
-    elif period == "7d":
-        cutoff = now - timedelta(days=7)
-    elif period == "30d":
-        cutoff = now - timedelta(days=30)
-    elif period == "all":
-        cutoff = None
-    else:
-        raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
 
-    # Query with optional date filter
-    query = db.query(
-        func.count(News.id).label("total"),
-        func.avg(News.sentiment_score).label("avg_score"),
-        func.sum(
-            case((News.sentiment_label == "positive", 1), else_=0)
-        ).label("positive_count"),
-        func.sum(
-            case((News.sentiment_label == "neutral", 1), else_=0)
-        ).label("neutral_count"),
-        func.sum(
-            case((News.sentiment_label == "negative", 1), else_=0)
-        ).label("negative_count"),
-    )
+  # Calculate cutoff based on period
+  now = datetime.now(timezone.utc)
 
-    # Apply date filter if not "all"
-    if cutoff:
-        query = query.filter(News.published_at >= cutoff)
+  if period == "24h":
+      cutoff = now - timedelta(hours=24)
+  elif period == "7d":
+      cutoff = now - timedelta(days=7)
+  elif period == "30d":
+      cutoff = now - timedelta(days=30)
+  elif period == "all":
+      cutoff = None
+  else:
+      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
 
-    result = query.first()
+  # Query with optional date filter
+  query = db.query(
+      func.count(News.id).label("total"),
+      func.avg(News.sentiment_score).label("avg_score"),
+      func.sum(
+          case((News.sentiment_label == "positive", 1), else_=0)
+      ).label("positive_count"),
+      func.sum(
+          case((News.sentiment_label == "neutral", 1), else_=0)
+      ).label("neutral_count"),
+      func.sum(
+          case((News.sentiment_label == "negative", 1), else_=0)
+      ).label("negative_count"),
+  )
 
-    total = result.total or 0
+  # Apply date filter if not "all"
+  if cutoff:
+      query = query.filter(News.published_at >= cutoff)
 
-    if total == 0:
-        return {
-            "market_state": "insufficient_data",
-            "avg_sentiment": 0,
-            "distribution": {"positive": 0, "neutral": 0, "negative": 0},
-            "total_articles": 0
-        }
+  result = query.first()
 
-    # Calculate percentages
-    positive_percentage = (result.positive_count / total) * 100
-    neutral_percentage = (result.neutral_count / total) * 100
-    negative_percentage = (result.negative_count / total) * 100
+  total = result.total or 0
 
-    # Determine bullish/bearish/neutral
-    if positive_percentage > 50:
-        market_state = "bullish"
-    elif negative_percentage > 50:
-        market_state = "bearish"
-    else:
-        market_state = "neutral"
+  if total == 0:
+      return {
+          "market_state": "insufficient_data",
+          "avg_sentiment": 0,
+          "distribution": {"positive": 0, "neutral": 0, "negative": 0},
+          "total_articles": 0
+      }
 
-    return {
-        "market_state": market_state,
-        "avg_sentiment": round(float(result.avg_score or 0), 4),
-        "distribution": {
-            "positive": round(positive_percentage, 2),
-            "neutral": round(neutral_percentage, 2),
-            "negative": round(negative_percentage, 2)
-        },
-        "total_articles": total,
-        "period": period
-    }
+  # Calculate percentages
+  positive_percentage = (result.positive_count / total) * 100
+  neutral_percentage = (result.neutral_count / total) * 100
+  negative_percentage = (result.negative_count / total) * 100
+
+  # Determine bullish/bearish/neutral
+  if positive_percentage > 50:
+      market_state = "bullish"
+  elif negative_percentage > 50:
+      market_state = "bearish"
+  else:
+      market_state = "neutral"
+
+  distribution = {
+    "positive": round(positive_percentage, 2),
+    "neutral": round(neutral_percentage, 2),
+    "negative": round(negative_percentage, 2)
+  }
+
+  response = {
+    "market_state": market_state,
+    "avg_sentiment": round(float(result.avg_score), 4),
+    "distribution": distribution,
+    "total_articles": total,
+    "period": period
+  }
+
+  # Store cache
+  if redis:
+    try:
+      redis.set(
+        cache_key,
+        json.dumps(response),
+        ex=300 # TTL : 5 minutes
+      )
+    except Exception as e:
+      print(f"Redis SET error: {e}")
+  return response
 
 
