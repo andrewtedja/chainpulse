@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
+from datetime import datetime, timedelta
+from sqlalchemy import func, case
 from datetime import datetime
 import requests
 import os
@@ -8,10 +10,15 @@ from ..ml.SentimentAnalyzer import SentimentAnalyzer
 from ..db.database import get_db
 from ..models import News, FetchMetadata
 
-# ================== TESTS ==================
-# curl -X POST http://localhost:8000/api/news/refresh
-# curl "http://localhost:8000/api/news?page=1&limit=20"
-# curl "http://localhost:8000/api/news?page=2&limit=20"
+'''
+NOTES (endpoints)
+- GET /api/news -> fetch news list (can use redis)
+- POST /api/news/refresh -> fetch + store ke DB (+Redis)
+
+di GET → untuk pagination (berapa item frontend mau lihat).
+di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
+'''
+
 
 # ================== ROUTES ==================
 
@@ -59,9 +66,6 @@ def get_news(page: int = 1, limit: int = 12, db: Session = Depends(get_db)):
           "total_pages": (total + limit - 1) // limit
       }
   }
-
-
-
 
 @router.post("/api/news/refresh")
 def refresh_news(db: Session = Depends(get_db)):
@@ -164,15 +168,91 @@ def refresh_news(db: Session = Depends(get_db)):
         "skipped": len(articles) - new_count
     }
 
+@router.get("/api/sentiment/current")
+def get_market_sentiment(
+    period: str = "24h",  # "24h", "7d", "30d", "all"
+    db: Session = Depends(get_db)
+):
+    """
+    Get overall market sentiment for specified period.
 
+    Query params:
+    - period: "24h" (default), "7d", "30d", "all"
 
+    Returns:
+    - Distribution: % positive/neutral/negative
+    - Average sentiment score
+    - Market state: Bullish/Neutral/Bearish
+    """
 
-'''
-NOTES (endpoints)
-- GET /api/news -> fetch news list (can use redis)
-- POST /api/news/refresh -> fetch + store ke DB (+Redis)
+    # Calculate cutoff based on period
+    now = datetime.utcnow()
 
-di GET → untuk pagination (berapa item frontend mau lihat).
-di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
-'''
+    if period == "24h":
+        cutoff = now - timedelta(hours=24)
+    elif period == "7d":
+        cutoff = now - timedelta(days=7)
+    elif period == "30d":
+        cutoff = now - timedelta(days=30)
+    elif period == "all":
+        cutoff = None
+    else:
+        raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+    # Build query with optional date filter
+    query = db.query(
+        func.count(News.id).label("total"),
+        func.avg(News.sentiment_score).label("avg_score"),
+        func.sum(
+            case((News.sentiment_label == "positive", 1), else_=0)
+        ).label("positive_count"),
+        func.sum(
+            case((News.sentiment_label == "neutral", 1), else_=0)
+        ).label("neutral_count"),
+        func.sum(
+            case((News.sentiment_label == "negative", 1), else_=0)
+        ).label("negative_count"),
+    )
+
+    # Apply date filter if not "all"
+    if cutoff:
+        query = query.filter(News.published_at >= cutoff)
+
+    result = query.first()
+
+    total = result.total or 0
+
+    if total == 0:
+        return {
+            "market_state": "insufficient_data",
+            "avg_sentiment": 0,
+            "distribution": {"positive": 0, "neutral": 0, "negative": 0},
+            "total_articles": 0
+        }
+
+    # Calculate percentages
+    positive_pct = (result.positive_count / total) * 100
+    neutral_pct = (result.neutral_count / total) * 100
+    negative_pct = (result.negative_count / total) * 100
+
+    # Determine market state
+    if positive_pct > 50:
+        market_state = "bullish"
+    elif negative_pct > 50:
+        market_state = "bearish"
+    else:
+        market_state = "neutral"
+
+    return {
+        "market_state": market_state,
+        "avg_sentiment": round(float(result.avg_score or 0), 4),
+        "distribution": {
+            "positive": round(positive_pct, 2),
+            "neutral": round(neutral_pct, 2),
+            "negative": round(negative_pct, 2)
+        },
+        "total_articles": total,
+        "period": period
+    }
+
 
