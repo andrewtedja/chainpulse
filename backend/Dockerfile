@@ -1,7 +1,5 @@
-# base image
 FROM python:3.11-slim
 
-# working directory
 WORKDIR /app
 
 # copy deps

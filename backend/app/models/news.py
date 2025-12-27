@@ -7,7 +7,7 @@ class News(Base):
     __tablename__ = "news"
 
     id = Column(Integer, primary_key=True, index=True)
-    url = Column(String, unique=True, index=True, nullable=False)
+    url = Column(String, unique=True, index=True, nullable=True)
     title = Column(String)
     content = Column(Text)  # Article description/summary from CryptoPanic
     published_at = Column(DateTime)

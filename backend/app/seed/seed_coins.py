@@ -16,7 +16,6 @@ def seed_coins():
                 stmt = insert(Coin).values(
                     symbol=c["symbol"].upper(),
                     name=c["name"],
-                    image=c["image"],
                 ).on_conflict_do_nothing(
                     index_elements=["symbol"]
                 )
