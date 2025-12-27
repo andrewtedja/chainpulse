@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .db.database import get_db, Base, engine
 
+from .api.routes import router
+
 app = FastAPI()
 
 app.add_middleware(
@@ -15,8 +17,15 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+
+# ============================= ROUTING =============================
+
+app.include_router(router)
+
 @app.get("/")
 def root():
     return {"text" : "Hello World"}
+
+
 
 # uvicorn app.main:app --reload
