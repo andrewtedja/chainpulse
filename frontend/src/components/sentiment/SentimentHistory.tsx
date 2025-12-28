@@ -19,7 +19,7 @@ import type { Period } from "@/types/sentiment";
 
 export function SentimentHistory() {
   const [period, setPeriod] = useState<Period>("7d");
-  const { data, isLoading } = useNews(1, period === "24h" ? 100 : period === "7d" ? 500 : 1000);
+  const { data, isLoading } = useNews(1, 500, period);
 
   // Aggregate sentiment scores by day
   const chartData = (() => {

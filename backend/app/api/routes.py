@@ -31,14 +31,20 @@ analyzer = SentimentAnalyzer()
 def get_news(
     page: int = 1,
     limit: int = 12,
+    period: str = None,  # Optional: "24h", "7d", "30d", "all"
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ):
   """
   GET paginated news + sentimentnya
 
+  Query params:
+  - page: Page number (default: 1)
+  - limit: Items per page (default: 12, max: 500)
+  - period: Optional time filter ("24h", "7d", "30d", "all")
+
   Caching Strategy:
-  - Cache key: news:page:{page}:limit:{limit}
+  - Cache key: news:page:{page}:limit:{limit}:period:{period}
   - TTL: 300 seconds (5 minutes)
   - Invalidated on: POST /api/news/refresh
   """
@@ -46,11 +52,11 @@ def get_news(
   # Validation
   if page < 1:
     raise HTTPException(400, "Page must be >= 1!")
-  if limit > 50:
-    raise HTTPException(400, "Limit max 50!")
+  if limit > 500:
+    raise HTTPException(400, "Limit max 500!")
 
   # Check cache
-  cache_key = f"news:page:{page}:limit:{limit}"
+  cache_key = f"news:page:{page}:limit:{limit}:period:{period}"
 
   if redis:
       try:
@@ -64,13 +70,45 @@ def get_news(
   # MISS -> fetch from DB
   offset = (page - 1) * limit
 
-  news = db.query(News)\
+  # Build base query
+  query = db.query(News)
+
+  # Apply period filter if specified
+  if period:
+      now = datetime.now(timezone.utc)
+      if period == "24h":
+          cutoff = now - timedelta(hours=24)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "7d":
+          cutoff = now - timedelta(days=7)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "30d":
+          cutoff = now - timedelta(days=30)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "all":
+          # No filter for "all"
+          pass
+      else:
+          raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  news = query\
     .order_by(News.published_at.desc())\
     .offset(offset)\
     .limit(limit)\
     .all()
 
-  total = db.query(News).count()
+  # Total count with same filter
+  total_query = db.query(News)
+  if period and period != "all":
+      if period == "24h":
+          cutoff = now - timedelta(hours=24)
+      elif period == "7d":
+          cutoff = now - timedelta(days=7)
+      elif period == "30d":
+          cutoff = now - timedelta(days=30)
+      total_query = total_query.filter(News.published_at >= cutoff)
+
+  total = total_query.count()
 
   response = {
       "data": [
@@ -207,10 +245,14 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
             # Clear all news pagination caches (pattern: news:page:*)
             # For prod: track active cache keys or use Redis SCAN if available
 
-            # Clear first 10 pages
+            # Clear first 10 pages with various limits and periods
             for page in range(1, 11):
-                for limit in [12, 20, 50]:
-                    redis.delete(f"news:page:{page}:limit:{limit}")
+                for limit in [12, 20, 50, 100, 500]:
+                    # Clear with no period filter
+                    redis.delete(f"news:page:{page}:limit:{limit}:period:None")
+                    # Clear with period filters
+                    for period in ["24h", "7d", "30d", "all"]:
+                        redis.delete(f"news:page:{page}:limit:{limit}:period:{period}")
 
             # Clear sentiment caches
             for period in ["24h", "7d", "30d", "all"]:
