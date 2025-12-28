@@ -4,10 +4,20 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function fetchNews(
   page: number = 1,
-  limit: number = 12
+  limit: number = 12,
+  period?: string
 ): Promise<NewsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (period) {
+    params.append("period", period);
+  }
+
   const response = await fetch(
-    `${API_BASE_URL}/api/news?page=${page}&limit=${limit}`
+    `${API_BASE_URL}/api/news?${params.toString()}`
   );
 
   if (!response.ok) {
