@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--font-sans: var(--font-sora);
+	--font-display: var(--font-sora);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
+	--radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+	--radius: 0.75rem;
+
+	/* Background & Foreground - Pure Black/Gray */
+	--background: 0 0% 4%;
+	--foreground: 210 40% 98%;
+
+	/* Card - Pure Gray */
+	--card: 0 0% 8%;
+	--card-foreground: 210 40% 98%;
+
+	/* Popover - Pure Gray */
+	--popover: 0 0% 8%;
+	--popover-foreground: 210 40% 98%;
+
+	/* Primary - Cyan */
+	--primary: 185 100% 50%;
+	--primary-foreground: 0 0% 4%;
+
+	/* Secondary - Pure Gray */
+	--secondary: 0 0% 14%;
+	--secondary-foreground: 210 40% 98%;
+
+	/* Muted - Pure Gray */
+	--muted: 0 0% 12%;
+	--muted-foreground: 0 0% 55%;
+
+	/* Accent - Cyan (matching primary) */
+	--accent: 185 100% 50%;
+	--accent-foreground: 0 0% 4%;
+
+	/* Destructive - Red */
+	--destructive: 0 84% 60%;
+	--destructive-foreground: 210 40% 98%;
+
+	/* Success - Green */
+	--success: 142 76% 45%;
+	--success-foreground: 210 40% 98%;
+
+	/* Warning - Yellow */
+	--warning: 45 100% 50%;
+	--warning-foreground: 0 0% 4%;
+
+	/* Border & Input - Pure Gray */
+	--border: 0 0% 18%;
+	--input: 0 0% 18%;
+	--ring: 185 100% 50%;
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+button {
+	cursor: pointer;
+}
+
+.glass-card {
+	@apply bg-card/60 backdrop-blur-xl border border-border/30 rounded-lg;
+}

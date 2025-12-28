@@ -1,0 +1,21 @@
+meta {
+  name: GET News
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://cryptopanic.com/api/v1/posts/?auth_token={{CRYPTOPANIC_API_KEY}}&filter=rising&limit=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  auth_token: {{CRYPTOPANIC_API_KEY}}
+  filter: rising
+  limit: 20
+}
+
+settings {
+  encodeUrl: true
+}
