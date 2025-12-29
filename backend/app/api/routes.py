@@ -23,11 +23,11 @@ di GET → untuk pagination (berapa item frontend mau lihat).
 di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
 '''
 
-
 # ================== ROUTES ==================
 
 router = APIRouter()
 analyzer = SentimentAnalyzer()
+coin_matcher = CoinMatcher()
 
 @router.get("/api/news")
 def get_news(
@@ -186,23 +186,15 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
     articles = data.get("results", [])
     new_count = 0
 
-    coin_matcher = CoinMatcher()
-
     for article in articles:
         published_at = None
         if article.get("published_at"):
             published_at = datetime.fromisoformat(article["published_at"].replace("Z", "+00:00"))
 
-        # Generate URL from slug for uniqueness tracking
-        slug = article.get("slug", "")
-        pseudo_url = f"https://cryptopanic.com/news/{slug}" if slug else None
-
         news_data = {
-            "url": pseudo_url,
             "title": article.get("title"),
             "content": article.get("description"),
             "published_at": published_at,
-            "source": {},  # temp empty (soalnya API doesn't return by default)
         }
 
         # FINBERT
@@ -223,7 +215,7 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         try:
             result = db.execute(
                 stmt.on_conflict_do_nothing(
-                    index_elements=["url"]
+                    index_elements=["title", "updated_at"]
                 )
             )
 
@@ -232,10 +224,13 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
             if is_new_article:
                 new_count += 1
 
-            news_record = db.query(News).filter(News.url == news_data.get("url")).first()
+            news_record = db.query(News).filter(
+                News.title == news_data["title"],
+                News.updated_at >= func.now() - func.make_interval(0, 0, 0, 0, 0, 0, 1)  # Within last second
+            ).first()
 
             if not news_record:
-                print(f"[ERROR] News record not found for URL: {news_data.get('url')}")
+                print(f"[ERROR] News record not found for title: {news_data['title'][:50]}...")
                 continue
 
             existing_assoc_count = db.query(news_coin_association).filter(
