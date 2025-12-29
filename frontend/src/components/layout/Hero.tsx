@@ -8,7 +8,7 @@ export function Hero() {
 	const { mutate: refresh, isPending } = useRefresh();
 
 	return (
-		<div className="border-b border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent">
+		<div className="border-b border-white/10 bg-linear-to-b from-white/3 to-transparent">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
 				<div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
 					{/* Title Section */}

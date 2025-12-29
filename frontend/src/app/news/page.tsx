@@ -21,7 +21,7 @@ export default function NewsPage() {
 			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
 				<div className="mb-8">
 					<h1
-						className="text-4xl font-bold bg-gradient-to-r from-[#02D5E9] to-cyan-400 bg-clip-text text-transparent mb-2"
+						className="text-4xl font-bold bg-linear-to-r from-[#02D5E9] to-cyan-400 bg-clip-text text-transparent mb-2"
 						style={{ filter: "drop-shadow(0 0 40px rgba(2, 213, 233, 0.4))" }}
 					>
 						Market News
