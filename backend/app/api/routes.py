@@ -455,7 +455,18 @@ def get_coins_sentiment(period:str = "24h",
     - news_count -> calculate by server controller function API yang bisa calculate total news by coin
   '''
 
+  # Check cache first
+  cache_key = f"coins:sentiment:period:{period}"
+  if redis:
+    try:
+      cached = redis.get(cache_key)
+      if cached:
+        # HIT
+        return json.loads(cached)
+    except Exception as e:
+      print(f"Redis GET error: {e}")
 
+  # Cache MISS - query database
   # Calculate cutoff based on period
   now = datetime.now(timezone.utc)
 
@@ -510,10 +521,19 @@ def get_coins_sentiment(period:str = "24h",
   bearish_sorted = sorted(bearish, key=lambda x: x['sentiment_score'])
   top_bearish = bearish_sorted[:5]
 
-  return {
+  response = {
       "bullish": top_bullish,
       "bearish": top_bearish
   }
+
+  # Store in cache for next request (5 min TTL)
+  if redis:
+    try:
+      redis.setex(cache_key, 300, json.dumps(response))
+    except Exception as e:
+      print(f"Redis SET error: {e}")
+
+  return response
 
 
 # for now gausah dibatesin dlu (buat buybblechart)
@@ -532,6 +552,18 @@ def get_coins_bubble(period: str = "all",
   - ticker, name
   '''
 
+  # Check cache first
+  cache_key = f"coins:bubble:period:{period}"
+  if redis:
+    try:
+      cached = redis.get(cache_key)
+      if cached:
+        # HIT
+        return json.loads(cached)
+    except Exception as e:
+      print(f"Redis GET error: {e}")
+
+  # MISS -> query database
   # Calculate cutoff based on period
   now = datetime.now(timezone.utc)
 
@@ -572,5 +604,12 @@ def get_coins_bubble(period: str = "all",
       "news_count": row.news_count
     }
     response.append(coin_data)
+
+  # Store in cache for next request (5 min TTL)
+  if redis:
+    try:
+      redis.setex(cache_key, 300, json.dumps(response))
+    except Exception as e:
+      print(f"Redis SET error: {e}")
 
   return response
