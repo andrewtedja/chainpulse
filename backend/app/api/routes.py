@@ -40,6 +40,8 @@ def get_news(
   """
   GET paginated news + sentimentnya
 
+  Bakal diubah jadi include news coins, and dipake juga buat leaderboard
+
   Query params:
   - page: Page number (default: 1)
   - limit: Items per page (default: 12, max: 500)
@@ -202,9 +204,21 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         sentiment_result = analyzer.analyze(text)
 
         sentiment = sentiment_result[0] if isinstance(sentiment_result, list) else sentiment_result
+        sentiment_score = sentiment["score"]
+        sentiment_label = sentiment["label"]
 
-        news_data["sentiment_score"] = sentiment["score"]
-        news_data["sentiment_label"] = sentiment["label"]
+
+        #NORMLAIZE ke -1 to 1
+        if sentiment_label == "positive":
+          normalized_score = sentiment_score
+        elif sentiment_label == "negative":
+          normalized_score = -sentiment_score
+        else:
+          # neutral
+          normalized_score = 0
+
+        news_data["sentiment_score"] = normalized_score
+        news_data["sentiment_label"] = sentiment_label
 
         # COIN MATCHING: Identify coins mentioned in article
         full_text = f"{news_data['title']} {news_data['content'] or ''}"
@@ -434,3 +448,27 @@ def get_market_sentiment(
   return response
 
 
+@router.get('/api/coins/leaderboard')
+def get_coins_sentiment():
+  '''API buat ngereturn top 5 bullish dan bearish coins
+    Params: period (24h and 7d)
+
+    Response:
+    - ticker
+    - name
+    - sentiment_score
+    - news_count -> calculate by server controller function API yang bisa calculate total news by coin
+  '''
+  pass
+
+@router.get('')
+
+# for now gausah dibatesin dlu (buat buybblechart)
+@router.get('/api/coins/bubble')
+  '''API buat ngereturn informasi untuk bubble chart:
+    - Articles count
+    - Sentiment_score (avg dari seluruh sentiment per coin)
+    - Gausah di limit dulu for now since its d3.js, 60+ coins is fine to display and gampang liat yg lebih gede
+    - Bubble bakal diukur based on articles count dan diatur di FE, positive/negative tapi kayanya harus direturn dari server
+  '''
+  pass
