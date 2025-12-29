@@ -75,7 +75,7 @@ function NewsLeaderboardItem({ news, index, type }: NewsLeaderboardItemProps) {
 		<div className="p-3 rounded-lg bg-[hsl(0,0%,14%)]/30 hover:bg-[hsl(0,0%,14%)]/50 border border-[hsl(0,0%,18%)]/50 transition-colors duration-200">
 			<div className="flex items-start gap-3">
 				<div
-					className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+					className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
 					style={{
 						backgroundColor: `${color}/20`,
 						color: color,

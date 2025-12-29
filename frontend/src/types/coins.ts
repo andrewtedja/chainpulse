@@ -9,5 +9,3 @@ export interface CoinSentimentResponse {
 	bullish: CoinSentiment[];
 	bearish: CoinSentiment[];
 }
-
-export interface CoinBubbleData extends CoinSentiment {}

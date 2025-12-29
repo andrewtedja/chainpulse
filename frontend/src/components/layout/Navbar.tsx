@@ -11,7 +11,7 @@ export function Navbar() {
 	const links = [
 		{ href: "/", label: "Dashboard", icon: TrendingUp },
 		{ href: "/news", label: "News", icon: Newspaper },
-		{ href: "#leaderboard", label: "Leaderboard", icon: BarChart3 },
+		{ href: "/#leaderboard", label: "Leaderboard", icon: BarChart3 },
 	];
 
 	return (
@@ -30,7 +30,7 @@ export function Navbar() {
 							<Link
 								key={link.href}
 								href={link.href}
-								className="flex items-center gap-2 px-5 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-[#13181c] transition-all duration-200"
+								className="flex items-center gap-2 px-5 py-3 rounded-lg text-muted-foreground  hover:bg-[#13181c] hover:text-[#02D5E9] hover:shadow-md transition-all duration-200"
 							>
 								<link.icon className="w-4 h-4" />
 								<span className="text-sm font-medium">{link.label}</span>

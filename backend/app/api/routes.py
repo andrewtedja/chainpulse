@@ -24,22 +24,21 @@ coin_matcher = CoinMatcher()
 def get_news(
     page: int = 1,
     limit: int = 12,
-    period: str = None,  # Optional: "24h", "7d", "30d", "all"
+    period: str = None,
+    sentiment: str = None,
+    search: str = None,
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ):
   """
-  GET paginated news + sentimentnya
-
-  Bakal diubah jadi include news coins, and dipake juga buat leaderboard
+  GET paginated news with filters
 
   Query params:
   - page: Page number (default: 1)
   - limit: Items per page (default: 12, max: 500)
-  - period: Optional time filter ("24h", "7d", "30d", "all")
-
-  CACHE KEY
-  - Cache key: news:page:{page}:limit:{limit}:period:{period}
+  - period: Time filter ("24h", "7d", "30d", "all")
+  - sentiment: Filter by sentiment ("positive", "neutral", "negative")
+  - search: Search query (searches title and content)
   """
 
   # Validation
@@ -48,23 +47,22 @@ def get_news(
   if limit > 500:
     raise HTTPException(400, "Limit max 500!")
 
-  # Check cache
-  cache_key = f"news:page:{page}:limit:{limit}:period:{period}"
+  # Check cache (include all filter params in cache key)
+  cache_key = f"news:page:{page}:limit:{limit}:period:{period}:sentiment:{sentiment}:search:{search}"
 
   if redis:
       try:
           cached = redis.get(cache_key)
           if cached:
-              # HIT
               return json.loads(cached)
       except Exception as e:
           print(f"Redis GET error: {e}")
 
-  # MISS -> fetch from DB
   offset = (page - 1) * limit
 
   query = db.query(News)
 
+  # Apply period filter
   if period:
       now = datetime.now(timezone.utc)
       if period == "24h":
@@ -82,6 +80,19 @@ def get_news(
       else:
           raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
 
+  # Sentiment filter (p/n/neutral)
+  if sentiment:
+      if sentiment not in ["positive", "neutral", "negative"]:
+          raise HTTPException(400, "Invalid sentiment. Use: positive, neutral, or negative")
+      query = query.filter(News.sentiment_label == sentiment)
+
+  # Nanti disini apply case insensitive + debouncing
+  if search:
+      search_term = f"%{search}%"
+      query = query.filter(
+          (News.title.ilike(search_term)) | (News.content.ilike(search_term))
+      )
+
   news = query\
     .order_by(News.published_at.desc())\
     .offset(offset)\
@@ -97,6 +108,15 @@ def get_news(
       elif period == "30d":
           cutoff = now - timedelta(days=30)
       total_query = total_query.filter(News.published_at >= cutoff)
+
+  if sentiment:
+      total_query = total_query.filter(News.sentiment_label == sentiment)
+
+  if search:
+      search_term = f"%{search}%"
+      total_query = total_query.filter(
+          (News.title.ilike(search_term)) | (News.content.ilike(search_term))
+      )
 
   total = total_query.count()
 

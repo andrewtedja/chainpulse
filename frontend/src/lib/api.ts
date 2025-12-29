@@ -10,16 +10,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export async function fetchNews(
 	page: number = 1,
 	limit: number = 12,
-	period?: string
+	period?: string,
+	sentiment?: string,
+	search?: string
 ): Promise<NewsResponse> {
 	const params = new URLSearchParams({
 		page: page.toString(),
 		limit: limit.toString(),
 	});
 
-	if (period) {
-		params.append("period", period);
-	}
+	if (period) params.append("period", period);
+	if (sentiment) params.append("sentiment", sentiment);
+	if (search) params.append("search", search);
 
 	const response = await fetch(`${API_BASE_URL}/api/news?${params.toString()}`);
 

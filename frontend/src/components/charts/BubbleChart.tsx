@@ -260,7 +260,7 @@ export function BubbleChart() {
 						<span className="text-sm text-gray-400">Bearish</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-6 h-6 bg-amber-400 rounded-sm"></div>
+						<div className="w-6 h-6 border-2 border-white/80 rounded-full"></div>
 						<span className="text-sm text-gray-400">Size = News Volume</span>
 					</div>
 				</div>
