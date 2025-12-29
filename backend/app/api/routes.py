@@ -14,15 +14,6 @@ from ..models.news_coin import news_coin_association
 from ..core.redis import get_redis
 from ..matcher.coin_matcher import CoinMatcher
 
-'''
-NOTES (endpoints)
-- GET /api/news -> fetch news list (can use redis)
-- POST /api/news/refresh -> fetch + store ke DB (+Redis)
-
-di GET → untuk pagination (berapa item frontend mau lihat).
-di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
-'''
-
 # ================== ROUTES ==================
 
 router = APIRouter()
@@ -118,7 +109,8 @@ def get_news(
               "published_at": n.published_at.isoformat() if n.published_at else None,
               "sentiment_score": n.sentiment_score,
               "sentiment_label": n.sentiment_label,
-              "created_at": n.created_at.isoformat()
+              "created_at": n.created_at.isoformat(),
+              "coins": [{"ticker": c.symbol, "name": c.name} for c in n.coins]
           }
           for n in news
       ],
@@ -491,7 +483,7 @@ def get_coins_sentiment(period:str = "24h",
     query = query.filter(News.published_at >= cutoff)
 
   query = query.group_by(Coin.symbol, Coin.name)\
-                .order_by(func.avg(News.sentiment_score))
+                .order_by(func.avg(News.sentiment_score).desc())
 
   all_results = query.all()
 
@@ -526,10 +518,59 @@ def get_coins_sentiment(period:str = "24h",
 
 # for now gausah dibatesin dlu (buat buybblechart)
 @router.get('/api/coins/bubble')
+def get_coins_bubble(period: str = "all",
+                      db: Session = Depends(get_db),
+                      redis = Depends(get_redis)):
   '''API buat ngereturn informasi untuk bubble chart:
     - Articles count
     - Sentiment_score (avg dari seluruh sentiment per coin)
     - Gausah di limit dulu for now since its d3.js, 60+ coins is fine to display and gampang liat yg lebih gede
     - Bubble bakal diukur based on articles count dan diatur di FE, positive/negative tapi kayanya harus direturn dari server
+  Response:
+  - article_count per coin
+  - sentiment score (avg) per coin
+  - ticker, name
   '''
-  pass
+
+  # Calculate cutoff based on period
+  now = datetime.now(timezone.utc)
+
+  if period == "24h":
+      cutoff = now - timedelta(hours=24)
+  elif period == "7d":
+      cutoff = now - timedelta(days=7)
+  elif period == "30d":
+      cutoff = now - timedelta(days=30)
+  elif period == "all":
+      cutoff = None
+  else:
+      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  query = db.query(
+    Coin.symbol,
+    Coin.name,
+    func.avg(News.sentiment_score).label('avg_sentiment'),
+    func.count(News.id).label('news_count')
+  )\
+  .join(news_coin_association, Coin.id==news_coin_association.c.coin_id)\
+  .join(News, news_coin_association.c.news_id == News.id)
+
+  if cutoff:
+    query = query.filter(News.published_at >= cutoff)
+
+  query = query.group_by(Coin.symbol, Coin.name)\
+                .order_by(func.avg(News.sentiment_score).desc())
+
+  all_results = query.all()
+
+  response = []
+  for row in all_results:
+    coin_data = {
+      "ticker": row.symbol,
+      "name": row.name,
+      "sentiment_score": float(row.avg_sentiment) if row.avg_sentiment else 0,
+      "news_count": row.news_count
+    }
+    response.append(coin_data)
+
+  return response
