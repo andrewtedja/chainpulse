@@ -448,8 +448,11 @@ def get_market_sentiment(
   return response
 
 
-@router.get('/api/coins/leaderboard')
-def get_coins_sentiment():
+@router.get('/api/coins/sentiment')
+def get_coins_sentiment(period:str = "24h",
+                        db: Session = Depends(get_db),
+                        redis = Depends(get_redis),
+                        ):
   '''API buat ngereturn top 5 bullish dan bearish coins
     Params: period (24h and 7d)
 
@@ -459,9 +462,67 @@ def get_coins_sentiment():
     - sentiment_score
     - news_count -> calculate by server controller function API yang bisa calculate total news by coin
   '''
-  pass
 
-@router.get('')
+
+  # Calculate cutoff based on period
+  now = datetime.now(timezone.utc)
+
+  if period == "24h":
+      cutoff = now - timedelta(hours=24)
+  elif period == "7d":
+      cutoff = now - timedelta(days=7)
+  elif period == "30d":
+      cutoff = now - timedelta(days=30)
+  elif period == "all":
+      cutoff = None
+  else:
+      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  query = db.query(
+    Coin.symbol,
+    Coin.name,
+    func.avg(News.sentiment_score).label('avg_sentiment'),
+    func.count(News.id).label('news_count')
+  )\
+  .join(news_coin_association, Coin.id==news_coin_association.c.coin_id)\
+  .join(News, news_coin_association.c.news_id == News.id)
+
+  if cutoff:
+    query = query.filter(News.published_at >= cutoff)
+
+  query = query.group_by(Coin.symbol, Coin.name)\
+                .order_by(func.avg(News.sentiment_score))
+
+  all_results = query.all()
+
+  # pisah jadi bullish bearish row
+  bullish = []
+  bearish = []
+
+  for row in all_results:
+    coin_data = {
+        "ticker": row.symbol,
+        "name": row.name,
+        "sentiment_score": float(row.avg_sentiment) if row.avg_sentiment else 0,
+        "news_count": row.news_count
+    }
+
+    if row.avg_sentiment and row.avg_sentiment > 0:
+        bullish.append(coin_data)
+    elif row.avg_sentiment and row.avg_sentiment < 0:
+        bearish.append(coin_data)
+
+  # Get top 5 of each
+  top_bullish = bullish[:5]
+
+  bearish_sorted = sorted(bearish, key=lambda x: x['sentiment_score'])
+  top_bearish = bearish_sorted[:5]
+
+  return {
+      "bullish": top_bullish,
+      "bearish": top_bearish
+  }
+
 
 # for now gausah dibatesin dlu (buat buybblechart)
 @router.get('/api/coins/bubble')
