@@ -1,54 +1,71 @@
-import type { NewsResponse, SentimentAggregate, RefreshResponse } from "@/types";
+import type {
+	NewsResponse,
+	SentimentAggregate,
+	RefreshResponse,
+	CoinSentimentResponse,
+} from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function fetchNews(
-  page: number = 1,
-  limit: number = 12,
-  period?: string
+	page: number = 1,
+	limit: number = 12,
+	period?: string
 ): Promise<NewsResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
+	const params = new URLSearchParams({
+		page: page.toString(),
+		limit: limit.toString(),
+	});
 
-  if (period) {
-    params.append("period", period);
-  }
+	if (period) {
+		params.append("period", period);
+	}
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/news?${params.toString()}`
-  );
+	const response = await fetch(`${API_BASE_URL}/api/news?${params.toString()}`);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch news");
-  }
+	if (!response.ok) {
+		throw new Error("Failed to fetch news");
+	}
 
-  return response.json();
+	return response.json();
 }
 
 export async function fetchSentiment(
-  period: string = "24h"
+	period: string = "24h"
 ): Promise<SentimentAggregate> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/sentiment/aggregate?period=${period}`
-  );
+	const response = await fetch(
+		`${API_BASE_URL}/api/sentiment/aggregate?period=${period}`
+	);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch sentiment");
-  }
+	if (!response.ok) {
+		throw new Error("Failed to fetch sentiment");
+	}
 
-  return response.json();
+	return response.json();
 }
 
 export async function refreshNews(): Promise<RefreshResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/news/refresh`, {
-    method: "POST",
-  });
+	const response = await fetch(`${API_BASE_URL}/api/news/refresh`, {
+		method: "POST",
+	});
 
-  if (!response.ok) {
-    throw new Error("Failed to refresh news");
-  }
+	if (!response.ok) {
+		throw new Error("Failed to refresh news");
+	}
 
-  return response.json();
+	return response.json();
+}
+
+export async function fetchCoinSentiment(
+	period: string = "24h"
+): Promise<CoinSentimentResponse> {
+	const response = await fetch(
+		`${API_BASE_URL}/api/coins/sentiment?period=${period}`
+	);
+
+	if (!response.ok) {
+		throw new Error("Failed to fetch coin sentiment");
+	}
+
+	return response.json();
 }
