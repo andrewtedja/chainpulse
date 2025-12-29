@@ -9,8 +9,10 @@ import os
 import json
 from ..ml.SentimentAnalyzer import SentimentAnalyzer
 from ..db.database import get_db
-from ..models import News, FetchMetadata
+from ..models import News, FetchMetadata, Coin
+from ..models.news_coin import news_coin_association
 from ..core.redis import get_redis
+from ..matcher.coin_matcher import CoinMatcher
 
 '''
 NOTES (endpoints)
@@ -21,36 +23,40 @@ di GET → untuk pagination (berapa item frontend mau lihat).
 di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
 '''
 
-
 # ================== ROUTES ==================
 
 router = APIRouter()
 analyzer = SentimentAnalyzer()
+coin_matcher = CoinMatcher()
 
 @router.get("/api/news")
 def get_news(
     page: int = 1,
     limit: int = 12,
+    period: str = None,  # Optional: "24h", "7d", "30d", "all"
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ):
   """
   GET paginated news + sentimentnya
 
-  Caching Strategy:
-  - Cache key: news:page:{page}:limit:{limit}
-  - TTL: 300 seconds (5 minutes)
-  - Invalidated on: POST /api/news/refresh
+  Query params:
+  - page: Page number (default: 1)
+  - limit: Items per page (default: 12, max: 500)
+  - period: Optional time filter ("24h", "7d", "30d", "all")
+
+  CACHE KEY
+  - Cache key: news:page:{page}:limit:{limit}:period:{period}
   """
 
   # Validation
   if page < 1:
     raise HTTPException(400, "Page must be >= 1!")
-  if limit > 50:
-    raise HTTPException(400, "Limit max 50!")
+  if limit > 500:
+    raise HTTPException(400, "Limit max 500!")
 
   # Check cache
-  cache_key = f"news:page:{page}:limit:{limit}"
+  cache_key = f"news:page:{page}:limit:{limit}:period:{period}"
 
   if redis:
       try:
@@ -64,13 +70,42 @@ def get_news(
   # MISS -> fetch from DB
   offset = (page - 1) * limit
 
-  news = db.query(News)\
+  query = db.query(News)
+
+  if period:
+      now = datetime.now(timezone.utc)
+      if period == "24h":
+          cutoff = now - timedelta(hours=24)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "7d":
+          cutoff = now - timedelta(days=7)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "30d":
+          cutoff = now - timedelta(days=30)
+          query = query.filter(News.published_at >= cutoff)
+      elif period == "all":
+          # No filter for "all"
+          pass
+      else:
+          raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  news = query\
     .order_by(News.published_at.desc())\
     .offset(offset)\
     .limit(limit)\
     .all()
 
-  total = db.query(News).count()
+  total_query = db.query(News)
+  if period and period != "all":
+      if period == "24h":
+          cutoff = now - timedelta(hours=24)
+      elif period == "7d":
+          cutoff = now - timedelta(days=7)
+      elif period == "30d":
+          cutoff = now - timedelta(days=30)
+      total_query = total_query.filter(News.published_at >= cutoff)
+
+  total = total_query.count()
 
   response = {
       "data": [
@@ -152,17 +187,14 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
     new_count = 0
 
     for article in articles:
-        # parse datetime
         published_at = None
         if article.get("published_at"):
             published_at = datetime.fromisoformat(article["published_at"].replace("Z", "+00:00"))
 
-        # Build news object
         news_data = {
             "title": article.get("title"),
             "content": article.get("description"),
             "published_at": published_at,
-            "source": {},  # temp empty (soalnya API doesn't return by default)
         }
 
         # FINBERT
@@ -174,23 +206,79 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         news_data["sentiment_score"] = sentiment["score"]
         news_data["sentiment_label"] = sentiment["label"]
 
+        # COIN MATCHING: Identify coins mentioned in article
+        full_text = f"{news_data['title']} {news_data['content'] or ''}"
+        coin_symbols = coin_matcher.identify_coins(full_text)
 
-        # Insert with conflict handling (skip if duplicate title+published_at)
         stmt = insert(News).values(**news_data)
 
         try:
             result = db.execute(
                 stmt.on_conflict_do_nothing(
-                    index_elements=["url"]
+                    index_elements=["title", "updated_at"]
                 )
             )
-            if result.rowcount > 0:
+
+            # Track if this was a new article for news_coins association
+            is_new_article = result.rowcount > 0
+            if is_new_article:
                 new_count += 1
+
+            news_record = db.query(News).filter(
+                News.title == news_data["title"],
+                News.updated_at >= func.now() - func.make_interval(0, 0, 0, 0, 0, 0, 1)  # Within last second
+            ).first()
+
+            if not news_record:
+                print(f"[ERROR] News record not found for title: {news_data['title'][:50]}...")
+                continue
+
+            existing_assoc_count = db.query(news_coin_association).filter(
+                news_coin_association.c.news_id == news_record.id
+            ).count()
+
+            # Syarat proses coin harusnya:
+            # 1. Article belom ada existing associations and
+            # 2. detected coins in the text
+            if existing_assoc_count == 0 and coin_symbols:
+                print(f"[COIN MATCH] Found coins: {coin_symbols} in '{news_data['title'][:50]}...'")
+
+                # Map coin symbols to coin IDs
+                coins = db.query(Coin).filter(Coin.symbol.in_(coin_symbols)).all()
+                print(f"[DB COINS] Matched {len(coins)}/{len(coin_symbols)} coins in DB")
+
+                # Bulk insert coin associations
+                coin_assoc_count = 0
+                for coin in coins:
+                    try:
+                        result_assoc = db.execute(
+                            insert(news_coin_association).values(
+                                news_id=news_record.id,
+                                coin_id=coin.id
+                            ).on_conflict_do_nothing()
+                        )
+                        print(f"[ASSOC INSERT] news_id={news_record.id}, coin_id={coin.id} ({coin.symbol}), rowcount={result_assoc.rowcount}")
+                        coin_assoc_count += 1
+                    except Exception as e:
+                        print(f"[ERROR ASSOC] Failed to insert coin association for {coin.symbol}: {e}")
+                        continue
+
+                if coin_assoc_count > 0:
+                    print(f"[SUCCESS] Inserted {coin_assoc_count} coin associations for news ID {news_record.id}")
+                    db.flush()
+                    print(f"[FLUSH] Flushed coin associations to DB")
+            elif existing_assoc_count > 0:
+                print(f"[SKIP] Article already has {existing_assoc_count} coin associations")
+            elif not coin_symbols:
+                print(f"[NO COINS] No coins detected in: {news_data['title'][:50]}...")
+
         except Exception as e:
             print(f"Failed to insert article: {e}")
             continue
 
+    print(f"\nComitting with {new_count} new articles")
     db.commit()
+    print(f"SUCCESS COMMIT")
 
     # TRACK FETCH METADATA
     metadata = FetchMetadata(
@@ -207,10 +295,14 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
             # Clear all news pagination caches (pattern: news:page:*)
             # For prod: track active cache keys or use Redis SCAN if available
 
-            # Clear first 10 pages
+            # Clear first 10 pages with various limits and periods
             for page in range(1, 11):
-                for limit in [12, 20, 50]:
-                    redis.delete(f"news:page:{page}:limit:{limit}")
+                for limit in [12, 20, 50, 100, 500]:
+                    # Clear with no period filter
+                    redis.delete(f"news:page:{page}:limit:{limit}:period:None")
+                    # Clear with period filters
+                    for period in ["24h", "7d", "30d", "all"]:
+                        redis.delete(f"news:page:{page}:limit:{limit}:period:{period}")
 
             # Clear sentiment caches
             for period in ["24h", "7d", "30d", "all"]:

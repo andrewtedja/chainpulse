@@ -97,7 +97,7 @@ export function SentimentGauge({
 			<div className="relative">
 				<div className="h-3 bg-gray-800 rounded-full overflow-hidden relative">
 					<div
-						className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-500 via-gray-600 to-green-500 rounded-full"
+						className="absolute inset-y-0 left-0 bg-linear-to-r from-red-500 via-gray-600 to-green-500 rounded-full"
 						style={{ width: "100%" }}
 					/>
 					<div
