@@ -3,6 +3,7 @@ import type {
 	SentimentAggregate,
 	RefreshResponse,
 	CoinSentimentResponse,
+	CoinSentiment,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -67,6 +68,20 @@ export async function fetchCoinSentiment(
 
 	if (!response.ok) {
 		throw new Error("Failed to fetch coin sentiment");
+	}
+
+	return response.json();
+}
+
+export async function fetchCoinBubble(
+	period: string = "24h"
+): Promise<CoinSentiment[]> {
+	const response = await fetch(
+		`${API_BASE_URL}/api/coins/bubble?period=${period}`
+	);
+
+	if (!response.ok) {
+		throw new Error("Failed to fetch coin bubble info");
 	}
 
 	return response.json();
