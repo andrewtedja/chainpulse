@@ -43,9 +43,15 @@ export default function Home() {
 						<SentimentHistory />
 					</div>
 				</div>
-				<Leaderboards />
-				<BubbleChart />
-				<NewsFeed />
+				<div id="leaderboard">
+					<Leaderboards />
+				</div>
+				<div id="bubble-chart">
+					<BubbleChart />
+				</div>
+				<div id="news-feed">
+					<NewsFeed />
+				</div>
 				<DatabaseStats />
 			</main>
 
