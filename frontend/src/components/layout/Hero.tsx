@@ -1,11 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useRefresh } from "@/hooks/useRefresh";
 
 export function Hero() {
 	const { mutate: refresh, isPending } = useRefresh();
+	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+	const handleRefresh = () => {
+		refresh(undefined, {
+			onSuccess: () => {
+				setLastUpdated(new Date());
+			},
+		});
+	};
 
 	const scrollToSection = (id: string) => {
 		const element = document.getElementById(id);
@@ -78,20 +88,27 @@ export function Hero() {
 					</div>
 
 					{/* Action Button */}
-					<Button
-						onClick={() => refresh()}
-						disabled={isPending}
-						size="lg"
-						className="group relative overflow-hidden bg-gradient-to-r from-white/10 to-white/5 hover:bg-white/15 border border-white/10 hover:border-white/20 text-white px-8 py-6 text-base font-medium transition-all duration-300 hover:shadow-lg hover:shadow-white/10 hover:scale-105"
-					>
-						<span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-						<RefreshCw
-							className={`w-5 h-5 mr-2 transition-transform duration-500 ${
-								isPending ? "animate-spin" : "group-hover:rotate-180"
-							}`}
-						/>
-						{isPending ? "Refreshing..." : "Refresh Analysis"}
-					</Button>
+					<div className="flex flex-col items-end gap-2">
+						<Button
+							onClick={handleRefresh}
+							disabled={isPending}
+							size="lg"
+							className="group relative overflow-hidden bg-gradient-to-r from-white/10 to-white/5 hover:bg-white/15 border border-white/10 hover:border-white/20 text-white px-8 py-6 text-base font-medium transition-all duration-300 hover:shadow-lg hover:shadow-white/10 hover:scale-105"
+						>
+							<span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+							<RefreshCw
+								className={`w-5 h-5 mr-2 transition-transform duration-500 ${
+									isPending ? "animate-spin" : "group-hover:rotate-180"
+								}`}
+							/>
+							{isPending ? "Refreshing..." : "Refresh Analysis"}
+						</Button>
+						{lastUpdated && (
+							<p className="text-xs text-gray-400">
+								Last updated: {lastUpdated.toLocaleTimeString()}
+							</p>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

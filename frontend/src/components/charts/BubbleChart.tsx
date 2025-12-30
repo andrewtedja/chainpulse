@@ -49,7 +49,7 @@ interface BubbleNode extends CoinSentiment {
 // ];
 
 export function BubbleChart() {
-	const [period, setPeriod] = useState<Period>("7d");
+	const [period, setPeriod] = useState<Period>("all");
 	const svgRef = useRef<SVGSVGElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +64,7 @@ export function BubbleChart() {
 		svg.selectAll("*").remove();
 
 		const width = containerRef.current.clientWidth;
-		const height = 700;
+		const height = 600;
 		const padding = 50;
 
 		svg.attr("width", width).attr("height", height);
@@ -232,7 +232,7 @@ export function BubbleChart() {
 
 	return (
 		<GlassCard>
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
 				<div>
 					<h3 className="text-lg font-semibold text-white">
 						News Sentiment Bubbles
@@ -245,42 +245,42 @@ export function BubbleChart() {
 				<PeriodFilter
 					activePeriod={period}
 					onPeriodChange={setPeriod}
-					periods={["24h", "7d"]}
+					periods={["all", "30d", "7d", "24h"]}
 				/>
+			</div>
+
+			{/* Legend */}
+			<div className="flex flex-wrap items-center justify-center gap-6 mb-4">
+				<div className="flex items-center gap-2">
+					<div className="w-4 h-4 bg-green-500 rounded-full"></div>
+					<span className="text-sm text-gray-400">Bullish</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<div className="w-4 h-4 bg-black border border-white rounded-full"></div>
+					<span className="text-sm text-gray-400">Neutral</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<div className="w-4 h-4 bg-red-500 rounded-full"></div>
+					<span className="text-sm text-gray-400">Bearish</span>
+				</div>
+				<div className="flex items-center gap-2">
+					<div className="w-6 h-6 border-2 border-white/80 rounded-full"></div>
+					<span className="text-sm text-gray-400">Size = News Volume</span>
+				</div>
 			</div>
 
 			<div className="w-full" ref={containerRef}>
 				{coinLoading ? (
-					<div className="flex items-center justify-center h-175">
+					<div className="flex items-center justify-center h-150">
 						<div className="text-gray-400">Loading chart...</div>
 					</div>
 				) : !coinData || coinData.length === 0 ? (
-					<div className="flex items-center justify-center h-175">
+					<div className="flex items-center justify-center h-150">
 						<div className="text-gray-400">No data available</div>
 					</div>
 				) : (
 					<svg ref={svgRef} className="w-full rounded-lg"></svg>
 				)}
-
-				{/* Legend */}
-				<div className="flex flex-wrap items-center justify-center gap-6 mt-4">
-					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-green-500 rounded-full"></div>
-						<span className="text-sm text-gray-400">Bullish</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-black border border-white rounded-full"></div>
-						<span className="text-sm text-gray-400">Neutral</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-red-500 rounded-full"></div>
-						<span className="text-sm text-gray-400">Bearish</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="w-6 h-6 border-2 border-white/80 rounded-full"></div>
-						<span className="text-sm text-gray-400">Size = News Volume</span>
-					</div>
-				</div>
 			</div>
 		</GlassCard>
 	);

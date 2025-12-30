@@ -47,7 +47,7 @@ export default function NewsPage() {
 							<PeriodFilter
 								activePeriod={period}
 								onPeriodChange={setPeriod}
-								periods={["all", "24h", "7d"]}
+								periods={["all", "30d", "7d", "24h"]}
 							/>
 						</div>
 

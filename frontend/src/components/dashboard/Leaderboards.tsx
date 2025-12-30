@@ -102,7 +102,7 @@ function NewsLeaderboardItem({ news, index, type }: NewsLeaderboardItemProps) {
 }
 
 export function Leaderboards() {
-	const [period, setPeriod] = useState<Period>("24h");
+	const [period, setPeriod] = useState<Period>("all");
 	const [activeTab, setActiveTab] = useState<TabType>("coins");
 
 	// Fetch news data for news leaderboard tab
@@ -151,7 +151,7 @@ export function Leaderboards() {
 				<PeriodFilter
 					activePeriod={period}
 					onPeriodChange={setPeriod}
-					periods={["24h", "7d"]}
+					periods={["all", "30d", "7d", "24h"]}
 				/>
 			</div>
 
