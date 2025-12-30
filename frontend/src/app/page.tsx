@@ -23,7 +23,7 @@ export default function Home() {
 			</div>
 
 			<main
-				className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12"
+				className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-12"
 				id="dashboard"
 			>
 				{/* Sentiment Overview Section */}
@@ -43,15 +43,15 @@ export default function Home() {
 						<SentimentHistory />
 					</div>
 				</div>
-				{/* Leaderboards */}
-				<Leaderboards />
-				{/* Bubble Chart Section */}
-				<BubbleChart />
-
-				{/* News Feed */}
-				<NewsFeed />
-
-				{/* Database Stats */}
+				<div id="leaderboard">
+					<Leaderboards />
+				</div>
+				<div id="bubble-chart">
+					<BubbleChart />
+				</div>
+				<div id="news-feed">
+					<NewsFeed />
+				</div>
 				<DatabaseStats />
 			</main>
 

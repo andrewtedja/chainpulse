@@ -8,11 +8,10 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ news }: NewsCardProps) {
-	// Determine color based on sentiment_label (not score)
 	const getScoreColor = () => {
 		if (news.sentiment_label === "positive") return "text-green-400";
 		if (news.sentiment_label === "negative") return "text-red-400";
-		return "text-gray-400"; // neutral
+		return "text-gray-400";
 	};
 
 	return (
@@ -36,6 +35,21 @@ export function NewsCard({ news }: NewsCardProps) {
 						<span className="text-gray-500">
 							{formatRelativeTime(news.published_at)}
 						</span>
+
+						{/* Coin badges - show which coins are mentioned */}
+						{news.coins && news.coins.length > 0 && (
+							<div className="flex flex-wrap gap-2">
+								{news.coins.map((coin) => (
+									<span
+										key={coin.ticker}
+										className="px-3 py-1 rounded-md bg-[#02D5E9]/10 text-[#02D5E9] text-xs font-medium border border-[#02D5E9]/20"
+										title={coin.name}
+									>
+										{coin.ticker}
+									</span>
+								))}
+							</div>
+						)}
 					</div>
 				</div>
 

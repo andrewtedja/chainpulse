@@ -43,31 +43,33 @@ export function DatabaseStats() {
 	];
 
 	return (
-		<GlassCard>
-			<h3 className="text-lg font-semibold text-white mb-6">
-				Database Statistics
-			</h3>
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-				{stats.map((stat) => {
-					const Icon = stat.icon;
-					return (
-						<div
-							key={stat.label}
-							className="text-center p-4 bg-[#111418] rounded-xl"
-						>
+		<div id="db-statistics">
+			<GlassCard>
+				<h3 className="text-lg font-semibold text-white mb-6">
+					Database Statistics
+				</h3>
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+					{stats.map((stat) => {
+						const Icon = stat.icon;
+						return (
 							<div
-								className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-2`}
+								key={stat.label}
+								className="text-center p-4 bg-[#111418] rounded-xl"
 							>
-								<Icon className={`w-6 h-6 ${stat.color}`} />
+								<div
+									className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-2`}
+								>
+									<Icon className={`w-6 h-6 ${stat.color}`} />
+								</div>
+								<div className={`text-2xl font-bold ${stat.color}`}>
+									{stat.value}
+								</div>
+								<div className="text-sm text-gray-400 mt-1">{stat.label}</div>
 							</div>
-							<div className={`text-2xl font-bold ${stat.color}`}>
-								{stat.value}
-							</div>
-							<div className="text-sm text-gray-400 mt-1">{stat.label}</div>
-						</div>
-					);
-				})}
-			</div>
-		</GlassCard>
+						);
+					})}
+				</div>
+			</GlassCard>
+		</div>
 	);
 }

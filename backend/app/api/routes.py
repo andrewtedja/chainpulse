@@ -14,15 +14,6 @@ from ..models.news_coin import news_coin_association
 from ..core.redis import get_redis
 from ..matcher.coin_matcher import CoinMatcher
 
-'''
-NOTES (endpoints)
-- GET /api/news -> fetch news list (can use redis)
-- POST /api/news/refresh -> fetch + store ke DB (+Redis)
-
-di GET → untuk pagination (berapa item frontend mau lihat).
-di POST → untuk kontrol banyaknya berita yang di-fetch dari API.
-'''
-
 # ================== ROUTES ==================
 
 router = APIRouter()
@@ -33,20 +24,21 @@ coin_matcher = CoinMatcher()
 def get_news(
     page: int = 1,
     limit: int = 12,
-    period: str = None,  # Optional: "24h", "7d", "30d", "all"
+    period: str = None,
+    sentiment: str = None,
+    search: str = None,
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ):
   """
-  GET paginated news + sentimentnya
+  GET paginated news with filters
 
   Query params:
   - page: Page number (default: 1)
   - limit: Items per page (default: 12, max: 500)
-  - period: Optional time filter ("24h", "7d", "30d", "all")
-
-  CACHE KEY
-  - Cache key: news:page:{page}:limit:{limit}:period:{period}
+  - period: Time filter ("24h", "7d", "30d", "all")
+  - sentiment: Filter by sentiment ("positive", "neutral", "negative")
+  - search: Search query (searches title and content)
   """
 
   # Validation
@@ -55,23 +47,22 @@ def get_news(
   if limit > 500:
     raise HTTPException(400, "Limit max 500!")
 
-  # Check cache
-  cache_key = f"news:page:{page}:limit:{limit}:period:{period}"
+  # Check cache (include all filter params in cache key)
+  cache_key = f"news:page:{page}:limit:{limit}:period:{period}:sentiment:{sentiment}:search:{search}"
 
   if redis:
       try:
           cached = redis.get(cache_key)
           if cached:
-              # HIT
               return json.loads(cached)
       except Exception as e:
           print(f"Redis GET error: {e}")
 
-  # MISS -> fetch from DB
   offset = (page - 1) * limit
 
   query = db.query(News)
 
+  # Apply period filter
   if period:
       now = datetime.now(timezone.utc)
       if period == "24h":
@@ -89,6 +80,19 @@ def get_news(
       else:
           raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
 
+  # Sentiment filter (p/n/neutral)
+  if sentiment:
+      if sentiment not in ["positive", "neutral", "negative"]:
+          raise HTTPException(400, "Invalid sentiment. Use: positive, neutral, or negative")
+      query = query.filter(News.sentiment_label == sentiment)
+
+  # Nanti disini apply case insensitive + debouncing
+  if search:
+      search_term = f"%{search}%"
+      query = query.filter(
+          (News.title.ilike(search_term)) | (News.content.ilike(search_term))
+      )
+
   news = query\
     .order_by(News.published_at.desc())\
     .offset(offset)\
@@ -105,6 +109,15 @@ def get_news(
           cutoff = now - timedelta(days=30)
       total_query = total_query.filter(News.published_at >= cutoff)
 
+  if sentiment:
+      total_query = total_query.filter(News.sentiment_label == sentiment)
+
+  if search:
+      search_term = f"%{search}%"
+      total_query = total_query.filter(
+          (News.title.ilike(search_term)) | (News.content.ilike(search_term))
+      )
+
   total = total_query.count()
 
   response = {
@@ -116,7 +129,8 @@ def get_news(
               "published_at": n.published_at.isoformat() if n.published_at else None,
               "sentiment_score": n.sentiment_score,
               "sentiment_label": n.sentiment_label,
-              "created_at": n.created_at.isoformat()
+              "created_at": n.created_at.isoformat(),
+              "coins": [{"ticker": c.symbol, "name": c.name} for c in n.coins]
           }
           for n in news
       ],
@@ -202,9 +216,21 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         sentiment_result = analyzer.analyze(text)
 
         sentiment = sentiment_result[0] if isinstance(sentiment_result, list) else sentiment_result
+        sentiment_score = sentiment["score"]
+        sentiment_label = sentiment["label"]
 
-        news_data["sentiment_score"] = sentiment["score"]
-        news_data["sentiment_label"] = sentiment["label"]
+
+        #NORMLAIZE ke -1 to 1
+        if sentiment_label == "positive":
+          normalized_score = sentiment_score
+        elif sentiment_label == "negative":
+          normalized_score = -sentiment_score
+        else:
+          # neutral
+          normalized_score = 0
+
+        news_data["sentiment_score"] = normalized_score
+        news_data["sentiment_label"] = sentiment_label
 
         # COIN MATCHING: Identify coins mentioned in article
         full_text = f"{news_data['title']} {news_data['content'] or ''}"
@@ -434,3 +460,176 @@ def get_market_sentiment(
   return response
 
 
+@router.get('/api/coins/sentiment')
+def get_coins_sentiment(period:str = "24h",
+                        db: Session = Depends(get_db),
+                        redis = Depends(get_redis),
+                        ):
+  '''API buat ngereturn top 5 bullish dan bearish coins
+    Params: period (24h and 7d)
+
+    Response:
+    - ticker
+    - name
+    - sentiment_score
+    - news_count -> calculate by server controller function API yang bisa calculate total news by coin
+  '''
+
+  # Check cache first
+  cache_key = f"coins:sentiment:period:{period}"
+  if redis:
+    try:
+      cached = redis.get(cache_key)
+      if cached:
+        # HIT
+        return json.loads(cached)
+    except Exception as e:
+      print(f"Redis GET error: {e}")
+
+  # Cache MISS - query database
+  # Calculate cutoff based on period
+  now = datetime.now(timezone.utc)
+
+  if period == "24h":
+      cutoff = now - timedelta(hours=24)
+  elif period == "7d":
+      cutoff = now - timedelta(days=7)
+  elif period == "30d":
+      cutoff = now - timedelta(days=30)
+  elif period == "all":
+      cutoff = None
+  else:
+      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  query = db.query(
+    Coin.symbol,
+    Coin.name,
+    func.avg(News.sentiment_score).label('avg_sentiment'),
+    func.count(News.id).label('news_count')
+  )\
+  .join(news_coin_association, Coin.id==news_coin_association.c.coin_id)\
+  .join(News, news_coin_association.c.news_id == News.id)
+
+  if cutoff:
+    query = query.filter(News.published_at >= cutoff)
+
+  query = query.group_by(Coin.symbol, Coin.name)\
+                .order_by(func.avg(News.sentiment_score).desc())
+
+  all_results = query.all()
+
+  # pisah jadi bullish bearish row
+  bullish = []
+  bearish = []
+
+  for row in all_results:
+    coin_data = {
+        "ticker": row.symbol,
+        "name": row.name,
+        "sentiment_score": float(row.avg_sentiment) if row.avg_sentiment else 0,
+        "news_count": row.news_count
+    }
+
+    if row.avg_sentiment and row.avg_sentiment > 0:
+        bullish.append(coin_data)
+    elif row.avg_sentiment and row.avg_sentiment < 0:
+        bearish.append(coin_data)
+
+  # Get top 5 of each
+  top_bullish = bullish[:5]
+
+  bearish_sorted = sorted(bearish, key=lambda x: x['sentiment_score'])
+  top_bearish = bearish_sorted[:5]
+
+  response = {
+      "bullish": top_bullish,
+      "bearish": top_bearish
+  }
+
+  # Store in cache for next request (5 min TTL)
+  if redis:
+    try:
+      redis.setex(cache_key, 300, json.dumps(response))
+    except Exception as e:
+      print(f"Redis SET error: {e}")
+
+  return response
+
+
+# for now gausah dibatesin dlu (buat buybblechart)
+@router.get('/api/coins/bubble')
+def get_coins_bubble(period: str = "all",
+                      db: Session = Depends(get_db),
+                      redis = Depends(get_redis)):
+  '''API buat ngereturn informasi untuk bubble chart:
+    - Articles count
+    - Sentiment_score (avg dari seluruh sentiment per coin)
+    - Gausah di limit dulu for now since its d3.js, 60+ coins is fine to display and gampang liat yg lebih gede
+    - Bubble bakal diukur based on articles count dan diatur di FE, positive/negative tapi kayanya harus direturn dari server
+  Response:
+  - article_count per coin
+  - sentiment score (avg) per coin
+  - ticker, name
+  '''
+
+  # Check cache first
+  cache_key = f"coins:bubble:period:{period}"
+  if redis:
+    try:
+      cached = redis.get(cache_key)
+      if cached:
+        # HIT
+        return json.loads(cached)
+    except Exception as e:
+      print(f"Redis GET error: {e}")
+
+  # MISS -> query database
+  # Calculate cutoff based on period
+  now = datetime.now(timezone.utc)
+
+  if period == "24h":
+      cutoff = now - timedelta(hours=24)
+  elif period == "7d":
+      cutoff = now - timedelta(days=7)
+  elif period == "30d":
+      cutoff = now - timedelta(days=30)
+  elif period == "all":
+      cutoff = None
+  else:
+      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+
+  query = db.query(
+    Coin.symbol,
+    Coin.name,
+    func.avg(News.sentiment_score).label('avg_sentiment'),
+    func.count(News.id).label('news_count')
+  )\
+  .join(news_coin_association, Coin.id==news_coin_association.c.coin_id)\
+  .join(News, news_coin_association.c.news_id == News.id)
+
+  if cutoff:
+    query = query.filter(News.published_at >= cutoff)
+
+  query = query.group_by(Coin.symbol, Coin.name)\
+                .order_by(func.avg(News.sentiment_score).desc())
+
+  all_results = query.all()
+
+  response = []
+  for row in all_results:
+    coin_data = {
+      "ticker": row.symbol,
+      "name": row.name,
+      "sentiment_score": float(row.avg_sentiment) if row.avg_sentiment else 0,
+      "news_count": row.news_count
+    }
+    response.append(coin_data)
+
+  # Store in cache for next request (5 min TTL)
+  if redis:
+    try:
+      redis.setex(cache_key, 300, json.dumps(response))
+    except Exception as e:
+      print(f"Redis SET error: {e}")
+
+  return response
