@@ -19,7 +19,13 @@ export function NewsFeed() {
 
 	const debouncedSearch = useDebounce(searchInput, 500);
 
-	const { data, isLoading } = useNews(1, 50, period, sentiment, debouncedSearch || undefined);
+	const { data, isLoading } = useNews(
+		1,
+		10,
+		period,
+		sentiment,
+		debouncedSearch || undefined
+	);
 
 	return (
 		<GlassCard>
@@ -86,7 +92,7 @@ export function NewsFeed() {
 								variant="ghost"
 								className="text-[#46afe7] hover:text-[#1fdced]"
 							>
-								Load More Articles
+								See more articles
 								<ArrowRight className="w-4 h-4 ml-2" />
 							</Button>
 						</Link>

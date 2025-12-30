@@ -9,7 +9,7 @@ export function Hero() {
 
 	return (
 		<div className="border-b border-white/10 bg-linear-to-b from-white/3 to-transparent">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-15 ">
 				<div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
 					{/* Title Section */}
 					<div className="space-y-6">
