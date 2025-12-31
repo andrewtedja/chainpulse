@@ -30,7 +30,7 @@ type PayloadItem = {
 };
 
 export function SentimentHistory() {
-	const [period, setPeriod] = useState<Period>("7d");
+	const [period, setPeriod] = useState<Period>("all");
 	const { data, isLoading } = useNews(1, 500, period);
 
 	// Aggregate sentiment scores by day
