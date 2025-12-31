@@ -3,12 +3,12 @@
 import { GlassCard } from "@/components/common/GlassCard";
 import { useSentiment } from "@/hooks/useSentiment";
 import { FileText, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { DatabaseStatsSkeleton } from "@/components/ui/skeletons/DatabaseStatsSkeleton";
 
 export function DatabaseStats() {
 	const { data, isLoading } = useSentiment("all");
 
-	if (isLoading) return <LoadingSpinner />;
+	if (isLoading) return <DatabaseStatsSkeleton />;
 	if (!data) return null;
 
 	const stats = [

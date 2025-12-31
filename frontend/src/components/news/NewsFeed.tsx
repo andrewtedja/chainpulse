@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GlassCard } from "@/components/common/GlassCard";
 import { Button } from "@/components/ui/button";
 import { NewsCard } from "./NewsCard";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { NewsFeedSkeleton } from "@/components/ui/skeletons/NewsCardSkeleton";
 import { useNews } from "@/hooks/useNews";
 import { PeriodFilter } from "@/components/layout/PeriodFilter";
 import { ArrowRight, Search } from "lucide-react";
@@ -77,7 +77,7 @@ export function NewsFeed() {
 			</div>
 
 			{isLoading ? (
-				<LoadingSpinner />
+				<NewsFeedSkeleton />
 			) : data?.data.length ? (
 				<>
 					<div className="space-y-4">

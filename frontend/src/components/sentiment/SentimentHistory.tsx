@@ -14,7 +14,7 @@ import {
 import { GlassCard } from "@/components/common/GlassCard";
 import { PeriodFilter } from "@/components/layout/PeriodFilter";
 import { useNews } from "@/hooks/useNews";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { ChartSkeleton } from "@/components/ui/skeletons/ChartSkeleton";
 import type { Period } from "@/types/sentiment";
 
 type ChartDataPoint = {
@@ -132,7 +132,7 @@ export function SentimentHistory() {
 			</div>
 
 			{isLoading ? (
-				<LoadingSpinner />
+				<ChartSkeleton height={350} />
 			) : chartData.length === 0 ? (
 				<div className="h-75 sm:h-87.5 flex items-center justify-center">
 					<p className="text-gray-400 text-sm">

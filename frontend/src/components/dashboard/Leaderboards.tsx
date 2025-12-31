@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/common/GlassCard";
 import { PeriodFilter } from "@/components/layout/PeriodFilter";
 import { useNews } from "@/hooks/useNews";
 import { useCoinSentiment } from "@/hooks/useCoinSentiment";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { LeaderboardSkeleton } from "@/components/ui/skeletons/LeaderboardSkeleton";
 import { formatRelativeTime } from "@/lib/utils";
 import { Newspaper } from "lucide-react";
 import type { Period } from "@/types/sentiment";
@@ -112,7 +112,7 @@ export function Leaderboards() {
 	const { data: coinData, isLoading: coinLoading } = useCoinSentiment(period);
 
 	const isLoading = activeTab === "coins" ? coinLoading : newsLoading;
-	if (isLoading) return <LoadingSpinner />;
+	if (isLoading) return <LeaderboardSkeleton />;
 
 	// Process news data for news tab
 	const validNews =

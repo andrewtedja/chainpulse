@@ -101,3 +101,16 @@ button {
 .glass-card {
 	@apply bg-card/60 backdrop-blur-xl border border-border/30 rounded-lg;
 }
+
+@keyframes shimmer {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.animate-shimmer {
+	animation: shimmer 2s infinite;
+}

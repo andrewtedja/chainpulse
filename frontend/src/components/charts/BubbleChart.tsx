@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/common/GlassCard";
 import { PeriodFilter } from "@/components/layout/PeriodFilter";
 import type { Period } from "@/types/sentiment";
 import { useCoinBubble } from "@/hooks/useCoinBubble";
+import { ChartSkeleton } from "@/components/ui/skeletons/ChartSkeleton";
 
 interface CoinSentiment {
 	ticker: string;
@@ -271,11 +272,9 @@ export function BubbleChart() {
 
 			<div className="w-full" ref={containerRef}>
 				{coinLoading ? (
-					<div className="flex items-center justify-center h-150">
-						<div className="text-gray-400">Loading chart...</div>
-					</div>
+					<ChartSkeleton height={600} showLegend={false} />
 				) : !coinData || coinData.length === 0 ? (
-					<div className="flex items-center justify-center h-150">
+					<div className="flex items-center justify-center" style={{ height: '600px' }}>
 						<div className="text-gray-400">No data available</div>
 					</div>
 				) : (

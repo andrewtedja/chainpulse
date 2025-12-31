@@ -10,7 +10,7 @@ import { DatabaseStats } from "@/components/dashboard/DatabaseStats";
 import { Leaderboards } from "@/components/dashboard/Leaderboards";
 import { NewsFeed } from "@/components/news/NewsFeed";
 import { useSentiment } from "@/hooks/useSentiment";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { SentimentGaugeSkeleton } from "@/components/ui/skeletons/SentimentGaugeSkeleton";
 
 export default function Home() {
 	const { data: sentimentData } = useSentiment("7d");
@@ -36,7 +36,7 @@ export default function Home() {
 								totalArticles={sentimentData.total_articles}
 							/>
 						) : (
-							<LoadingSpinner />
+							<SentimentGaugeSkeleton />
 						)}
 					</div>
 					<div className="lg:col-span-3">
