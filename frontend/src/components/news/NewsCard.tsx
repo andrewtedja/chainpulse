@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { SentimentBadge } from "@/components/common/SentimentBadge";
 import { formatRelativeTime } from "@/lib/utils";
+import { NewsDetailModal } from "./NewsDetailModal";
 import type { News } from "@/types/news";
 
 interface NewsCardProps {
@@ -8,6 +10,8 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ news }: NewsCardProps) {
+	const [isModalOpen, setIsModalOpen] = useState(false);
+
 	const getScoreColor = () => {
 		if (news.sentiment_label === "positive") return "text-green-400";
 		if (news.sentiment_label === "negative") return "text-red-400";
@@ -15,7 +19,11 @@ export function NewsCard({ news }: NewsCardProps) {
 	};
 
 	return (
-		<div className="p-4 rounded-xl bg-[#111418] hover:bg-[#161a20] border border-transparent hover:border-[#02D5E9] cursor-pointer transition-all duration-200 group">
+		<>
+			<div
+				className="p-4 rounded-xl bg-[#111418] hover:bg-[#161a20] border border-transparent hover:border-[#02D5E9] cursor-pointer transition-all duration-200 group"
+				onClick={() => setIsModalOpen(true)}
+			>
 			<div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
 				<div className="flex-1 min-w-0">
 					<h4 className="font-medium text-white group-hover:text-[#02D5E9] transition-colors line-clamp-2 mb-2">
@@ -62,6 +70,13 @@ export function NewsCard({ news }: NewsCardProps) {
 					)}
 				</div>
 			</div>
-		</div>
+			</div>
+
+			<NewsDetailModal
+			news={news}
+			isOpen={isModalOpen}
+			onClose={() => setIsModalOpen(false)}
+		/>
+		</>
 	);
 }

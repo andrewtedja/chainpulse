@@ -1,20 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useRefresh } from "@/hooks/useRefresh";
+import { useNews } from "@/hooks/useNews";
+import { formatRelativeTime } from "@/lib/utils";
 
 export function Hero() {
 	const { mutate: refresh, isPending } = useRefresh();
-	const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+	const { data: newsData } = useNews(1, 1);
 
 	const handleRefresh = () => {
-		refresh(undefined, {
-			onSuccess: () => {
-				setLastUpdated(new Date());
-			},
-		});
+		refresh();
 	};
 
 	const scrollToSection = (id: string) => {
@@ -36,7 +33,7 @@ export function Hero() {
 								<span className="relative inline-flex rounded-full h-2 w-2 bg-[#02D5E9]" />
 							</span>
 							<span className="text-xs font-semibold text-[#02D5E9] uppercase tracking-wider">
-								Chainpulse
+								FOKUS CRYPTO
 							</span>
 						</div>
 
@@ -44,7 +41,7 @@ export function Hero() {
 							Read the Market.
 							<br />
 							<span
-								className="text-[#02D5E9]"
+								className="text-[#02D5E9] font-medium"
 								style={{
 									textShadow:
 										"0 0 40px rgba(2, 213, 233, 0.1), 0 0 80px rgba(2, 213, 233, 0.3)",
@@ -89,6 +86,14 @@ export function Hero() {
 
 					{/* Action Button */}
 					<div className="flex flex-col items-end gap-2">
+						{newsData?.data?.[0]?.published_at && (
+							<p className="text-sm text-gray-400 font-medium">
+								Last Updated:{" "}
+								<span className="text-[#02D5E9]">
+									{formatRelativeTime(newsData.data[0].published_at)}
+								</span>
+							</p>
+						)}
 						<Button
 							onClick={handleRefresh}
 							disabled={isPending}
@@ -103,11 +108,6 @@ export function Hero() {
 							/>
 							{isPending ? "Refreshing..." : "Refresh Analysis"}
 						</Button>
-						{lastUpdated && (
-							<p className="text-xs text-gray-400">
-								Last updated: {lastUpdated.toLocaleTimeString()}
-							</p>
-						)}
 					</div>
 				</div>
 			</div>

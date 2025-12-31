@@ -20,7 +20,7 @@ export function Navbar() {
 				<div className="flex items-center justify-between h-16">
 					<Link href="/" className="flex items-center gap-2">
 						<span className="font-bold text-xl text-foreground">
-							Chain<span className="text-[#02D5E9]">pulse</span>
+							Chain<span className="text-[#ffffff]">pulse</span>
 						</span>
 					</Link>
 
