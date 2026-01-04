@@ -2,10 +2,29 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .db.database import get_db, Base, engine
-
+from contextlib import asynccontextmanager
 from .api.routes import router
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Preloading BERT model...")
+
+    from .ml.SentimentAnalyzer import SentimentAnalyzer
+    analyzer = SentimentAnalyzer()
+    analyzer.load_model()
+
+    # store once, reuse everywhere
+    app.state.sentiment_analyzer = analyzer
+
+    print("BERT model loaded!")
+
+    yield  # app is running
+
+    # optional cleanup
+    print("App shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +45,13 @@ app.include_router(router)
 def root():
     return {"text" : "Hello World"}
 
+# @app.on_event("startup")
+# async def startup_event():
+#     print("Preloading BERT model...")
+#     from .ml.SentimentAnalyzer import SentimentAnalyzer
+#     analyzer = SentimentAnalyzer()
+#     analyzer.load_model()
+#     print("BERT model loaded!")
 
 
 # uvicorn app.main:app --reload

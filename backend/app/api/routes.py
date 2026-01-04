@@ -633,3 +633,13 @@ def get_coins_bubble(period: str = "all",
       print(f"Redis SET error: {e}")
 
   return response
+
+# testing
+
+@router.get("/api/debug/bert-status")
+def bert_status():
+    from app.api.routes import analyzer
+    return {
+        "analyzer_exists": analyzer is not None,
+        "model_loaded": analyzer._pipe is not None if analyzer else False,
+    }
