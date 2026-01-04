@@ -1,5 +1,5 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2+cpu
+torch==2.6.0+cpu
 numpy<2.0
 alembic==1.16.5
 annotated-types==0.7.0
