@@ -41,7 +41,7 @@ export function Hero() {
 							Read the Market.
 							<br />
 							<span
-								className="text-[#02D5E9] font-medium"
+								className="text-[#02D5E9]"
 								style={{
 									textShadow:
 										"0 0 40px rgba(2, 213, 233, 0.1), 0 0 80px rgba(2, 213, 233, 0.3)",
