@@ -198,9 +198,12 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         db.commit()
         raise HTTPException(status_code=500, detail=f"Failed to fetch news: {str(e)}")
 
-    # 2. Parse and insert articles
+    # 2. Parse and insert articles (with batch processing)
     articles = data.get("results", [])
     new_count = 0
+
+    texts_to_analyze = []
+    articles_data = []
 
     for article in articles:
         published_at = None
@@ -213,23 +216,27 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
             "published_at": published_at,
         }
 
-        # FINBERT
         text = news_data["content"] or news_data["title"]
-        sentiment_result = analyzer.analyze(text)
+        texts_to_analyze.append(text)
+        articles_data.append(news_data)
 
-        sentiment = sentiment_result[0] if isinstance(sentiment_result, list) else sentiment_result
+    print(f"Analyzing {len(texts_to_analyze)} articles with BERT...")
+    sentiment_results = analyzer.analyze(texts_to_analyze)
+    print(f"BERT analysis complete!")
+
+    for i, news_data in enumerate(articles_data):
+        sentiment = sentiment_results[i]
         sentiment_score = sentiment["score"]
         sentiment_label = sentiment["label"]
 
-
-        #NORMLAIZE ke -1 to 1
+        # Normalize score to -1 to 1
         if sentiment_label == "positive":
-          normalized_score = sentiment_score
+            normalized_score = sentiment_score
         elif sentiment_label == "negative":
-          normalized_score = -sentiment_score
+            normalized_score = -sentiment_score
         else:
-          # neutral
-          normalized_score = 0
+            # neutral
+            normalized_score = 0
 
         news_data["sentiment_score"] = normalized_score
         news_data["sentiment_label"] = sentiment_label

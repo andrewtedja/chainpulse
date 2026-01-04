@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 class SentimentAnalyzer:
   _instance = None
@@ -18,11 +18,29 @@ class SentimentAnalyzer:
       )
     return self._pipe
 
-  def analyze(self, texts: List[str]):
+  def analyze(self, texts: Union[str, List[str]]):
+    """
+    Analyze sentiment of text(s).
+
+    Args:
+        texts: Single text string or list of texts
+
+    Returns:
+        Single result dict or list of result dicts
+    """
     pipe = self.load_model()
-    return pipe(
+
+    # Handle single string input
+    is_single = isinstance(texts, str)
+    if is_single:
+      texts = [texts]
+
+    results = pipe(
       texts,
-      truncation = True,
-      max_length = 256,
-      batch_size=8
+      truncation=True,
+      max_length=256,
+      batch_size=16
     )
+
+    # Return single result if input was single string
+    return results[0] if is_single else results
