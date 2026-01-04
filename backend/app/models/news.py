@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, func, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Index, Float, Text, func, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .news_coin import news_coin_association
 from ..db.base import Base
@@ -26,7 +26,9 @@ class News(Base):
   )
 
   __table_args__ = (
-      UniqueConstraint('title', 'updated_at', name='uq_news_title_updated'),
+      UniqueConstraint('title', 'published_at', name='uq_news_title_published'),
+      Index('idx_news_published_at', 'published_at'),
+      Index('idx_news_sentiment', 'sentiment_label')
   )
 
 # models: coins, news, coin_news, {fgi later}
