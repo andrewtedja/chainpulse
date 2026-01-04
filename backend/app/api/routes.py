@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime, timedelta
 from sqlalchemy import func, case
@@ -13,6 +13,7 @@ from ..models import News, FetchMetadata, Coin
 from ..models.news_coin import news_coin_association
 from ..core.redis import get_redis
 from ..matcher.coin_matcher import CoinMatcher
+
 
 # ================== ROUTES ==================
 
@@ -94,6 +95,7 @@ def get_news(
       )
 
   news = query\
+    .options(joinedload(News.coins))\
     .order_by(News.published_at.desc())\
     .offset(offset)\
     .limit(limit)\
@@ -241,7 +243,7 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
         try:
             result = db.execute(
                 stmt.on_conflict_do_nothing(
-                    index_elements=["title", "updated_at"]
+                    index_elements=["title", "published_at"]
                 )
             )
 
