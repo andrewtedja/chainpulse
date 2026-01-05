@@ -4,24 +4,29 @@ from sqlalchemy.orm import Session
 from .db.database import get_db, Base, engine
 from contextlib import asynccontextmanager
 from .api.routes import router
+from .scheduler.scheduler import start_scheduler, shutdown_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Preloading BERT model...")
+  print("Preloading BERT model...")
 
-    from .ml.SentimentAnalyzer import SentimentAnalyzer
-    analyzer = SentimentAnalyzer()
-    analyzer.load_model()
+  from .ml.SentimentAnalyzer import SentimentAnalyzer
+  analyzer = SentimentAnalyzer()
+  analyzer.load_model()
 
-    # store once, reuse everywhere
-    app.state.sentiment_analyzer = analyzer
+  # store once, reuse everywhere
+  app.state.sentiment_analyzer = analyzer
 
-    print("BERT model loaded!")
+  print("BERT model loaded!")
 
-    yield  # app is running
+  # Scheduler
+  start_scheduler()
 
-    # optional cleanup
-    print("App shutting down...")
+  yield  # app is running
+
+  # optional cleanup
+  shutdown_scheduler()
+  print("App shutting down...")
 
 
 app = FastAPI(lifespan=lifespan)

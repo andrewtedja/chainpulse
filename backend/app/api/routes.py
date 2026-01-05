@@ -652,3 +652,18 @@ def bert_status():
         "analyzer_exists": analyzer is not None,
         "model_loaded": analyzer._pipe is not None if analyzer else False,
     }
+
+@router.get("/api/scheduler/jobs")
+def list_scheduled_jobs():
+    from app.scheduler.scheduler import scheduler
+    jobs = scheduler.get_jobs()
+    return {
+        "jobs": [
+            {
+                "id": job.id,
+                "name": job.name,
+                "next_run_time": str(job.next_run_time)
+            }
+            for job in jobs
+        ]
+    }
