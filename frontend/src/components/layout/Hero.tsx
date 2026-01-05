@@ -88,7 +88,7 @@ export function Hero() {
 					<div className="flex flex-col items-end gap-2">
 						{newsData?.data?.[0]?.published_at && (
 							<p className="text-sm text-gray-400 font-medium">
-								Last Updated:{" "}
+								Latest News Published:{" "}
 								<span className="text-[#02D5E9]">
 									{formatRelativeTime(newsData.data[0].published_at)}
 								</span>
