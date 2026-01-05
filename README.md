@@ -167,8 +167,6 @@ Visit `http://localhost:3000`
 - `GET /api/coins/sentiment` - Top 5 bullish/bearish coins
 - `GET /api/coins/bubble` - All coins data for bubble chart
 
-Interactive API docs available at `/docs` when running locally.
-
 ---
 
 ## 🥽 Technology Deep Dive
