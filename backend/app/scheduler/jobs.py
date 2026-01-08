@@ -1,26 +1,22 @@
 from app.db.database import SessionLocal
 from app.core.redis import get_redis
-import requests
-import os
+from app.services.news_refresh import execute_news_refresh
 
 def refresh_news_job():
   print("Scheduled news refresh starting...")
 
   db = SessionLocal()
   redis = get_redis()
-  try:
-      # Call your refresh logic
-      api_url = os.getenv("API_BASE_URL", "http://localhost:8000")
-      response = requests.post(f"{api_url}/api/news/refresh")
 
-      if response.status_code == 200:
-          result = response.json()
-          print(f"Scheduled refresh complete: {result}")
-      else:
-          print(f"Scheduled refresh failed: {response.status_code}")
+  try:
+      # Call refresh logic directly (no HTTP)
+      result = execute_news_refresh(db, redis)
+      print(f"Scheduled refresh complete: {result}")
 
   except Exception as e:
       print(f"Scheduled refresh error: {e}")
+      import traceback
+      traceback.print_exc()
 
   finally:
       db.close()

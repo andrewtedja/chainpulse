@@ -6,7 +6,6 @@ scheduler = BackgroundScheduler()
 
 # Background scheduler called during app startup
 def start_scheduler():
-  # Refresh every 2 days
   scheduler.add_job(
     func=refresh_news_job,
     trigger=IntervalTrigger(days=1),
@@ -18,7 +17,7 @@ def start_scheduler():
   )
 
   scheduler.start()
-  print("Scheduler started => News will refresh every day")
+  print("Scheduler started => News will refresh every 5 MINUTES (TEST MODE)")
 
 
 # Graceful shutdown
