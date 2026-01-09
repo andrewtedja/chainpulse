@@ -88,7 +88,7 @@ ChainPulse aggregates crypto news, analyzes sentiment using FinBERT, and deliver
 
 ### Dashboard Overview
 
-![Dashboard](frontend/public/screenshots/img1.png)
+![Dashboard](frontend/public/screenshots/img1-2.png)
 
 > \_Sentiment gauge, market trends
 

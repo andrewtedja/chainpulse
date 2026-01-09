@@ -99,9 +99,12 @@ export function Footer() {
 					</div>
 				</div>
 
-				<div className="mt-8 pt-8 border-t border-white/10 text-center">
+				<div className="mt-8 pt-8 border-t border-white/10 text-center space-y-2">
 					<p className="text-gray-500 text-sm">
 						Market sentiment analysis powered by finance-tuned language models
+					</p>
+					<p className="text-gray-600 text-xs">
+						© 2025 Andrew Tedjapratama. All rights reserved.
 					</p>
 				</div>
 			</div>
