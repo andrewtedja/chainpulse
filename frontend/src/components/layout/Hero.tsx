@@ -87,12 +87,17 @@ export function Hero() {
 					{/* Action Button */}
 					<div className="flex flex-col items-end gap-2">
 						{newsData?.data?.[0]?.published_at && (
-							<p className="text-sm text-gray-400 font-medium">
-								Latest News Published:{" "}
-								<span className="text-[#02D5E9]">
-									{formatRelativeTime(newsData.data[0].published_at)}
-								</span>
-							</p>
+							<div className="text-right">
+								<p className="text-sm text-gray-400 font-medium">
+									Latest News Published:{" "}
+									<span className="text-[#02D5E9]">
+										{formatRelativeTime(newsData.data[0].published_at)}
+									</span>
+								</p>
+								<p className="text-xs text-gray-500 mt-1">
+									Auto-refreshes weekly for cost efficiency
+								</p>
+							</div>
 						)}
 						<Button
 							onClick={handleRefresh}

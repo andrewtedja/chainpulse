@@ -8,7 +8,7 @@ scheduler = BackgroundScheduler()
 def start_scheduler():
   scheduler.add_job(
     func=refresh_news_job,
-    trigger=IntervalTrigger(days=1),
+    trigger=IntervalTrigger(weeks=1),
     id='refresh_news_job',
     name='Refresh crypto news',
     misfire_grace_time=3600,
@@ -17,7 +17,7 @@ def start_scheduler():
   )
 
   scheduler.start()
-  print("Scheduler started => News will refresh every 5 MINUTES (TEST MODE)")
+  print("Scheduler started => News will refresh every WEEK for cost efficiency")
 
 
 # Graceful shutdown
