@@ -8,7 +8,7 @@ scheduler = BackgroundScheduler()
 def start_scheduler():
   scheduler.add_job(
     func=refresh_news_job,
-    trigger=IntervalTrigger(weeks=1),
+    trigger=IntervalTrigger(days=1),
     id='refresh_news_job',
     name='Refresh crypto news',
     misfire_grace_time=3600,
