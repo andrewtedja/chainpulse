@@ -95,7 +95,7 @@ export function Hero() {
 									</span>
 								</p>
 								<p className="text-xs text-gray-500 mt-1">
-									Auto-refreshes daily
+									Auto-refreshes 2x/day
 								</p>
 							</div>
 						)}
