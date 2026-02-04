@@ -47,7 +47,7 @@ ChainPulse aggregates crypto news, analyzes sentiment using FinBERT, and deliver
 
 ### Architecture Diagram
 
-![Mermaid Diagram](frontend/public/diagram/mermaid.png)
+![Mermaid Diagram](frontend/public/diagram/mermaid-image.png)
 
 ### Key Design Decisions and Assumptions
 
