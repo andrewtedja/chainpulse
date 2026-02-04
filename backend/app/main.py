@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from .db.database import get_db, Base, engine
 from contextlib import asynccontextmanager
 from .api.routes import router
-from .scheduler.scheduler import start_scheduler, shutdown_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,13 +18,8 @@ async def lifespan(app: FastAPI):
 
   print("BERT model loaded!")
 
-  # Scheduler
-  start_scheduler()
-
   yield  # app is running
 
-  # optional cleanup
-  shutdown_scheduler()
   print("App shutting down...")
 
 
@@ -49,6 +43,11 @@ app.include_router(router)
 @app.get("/")
 def root():
     return {"text" : "Hello World"}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Railway"""
+    return {"status": "healthy", "scheduler": "railway_cron"}
 
 # @app.on_event("startup")
 # async def startup_event():

@@ -477,17 +477,17 @@ def bert_status():
         "model_loaded": analyzer._pipe is not None if analyzer else False,
     }
 
-@router.get("/api/scheduler/jobs")
-def list_scheduled_jobs():
-    from app.scheduler.scheduler import scheduler
-    jobs = scheduler.get_jobs()
-    return {
-        "jobs": [
-            {
-                "id": job.id,
-                "name": job.name,
-                "next_run_time": str(job.next_run_time)
-            }
-            for job in jobs
-        ]
-    }
+
+@router.post("/api/cron/refresh")
+def cron_refresh(db: Session = Depends(get_db), redis = Depends(get_redis)):
+    try:
+        result = execute_news_refresh(db, redis, analyzer)
+        return {
+            "status": "success",
+            "triggered_by": "railway_cron",
+            "result": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
