@@ -43,11 +43,12 @@ export default function NewsPage() {
 
 				<GlassCard>
 					<div className="space-y-4 mb-6">
-						<div className="flex items-center justify-between">
+						<div className="flex justify-center">
 							<PeriodFilter
 								activePeriod={period}
 								onPeriodChange={setPeriod}
 								periods={["all", "30d", "7d", "24h"]}
+								centered
 							/>
 						</div>
 
@@ -63,12 +64,12 @@ export default function NewsPage() {
 								/>
 							</div>
 
-							<div className="flex gap-2">
+							<div className="flex justify-center flex-wrap gap-2">
 								{["all", "positive", "neutral", "negative"].map((s) => (
 									<button
 										key={s}
 										onClick={() => setSentiment(s === "all" ? undefined : s)}
-										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+										className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
 											(s === "all" && !sentiment) || sentiment === s
 												? "bg-[#02D5E9]/80 text-white"
 												: "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"

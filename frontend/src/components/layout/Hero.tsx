@@ -85,9 +85,9 @@ export function Hero() {
 					</div>
 
 					{/* Action Button */}
-					<div className="flex flex-col items-center gap-2">
+					<div className="flex flex-col items-center lg:items-end gap-2 w-full lg:w-auto">
 						{newsData?.data?.[0]?.published_at && (
-							<div className="text-center">
+							<div className="text-center lg:text-right">
 								<p className="text-sm text-gray-400 font-medium">
 									Latest News Published:{" "}
 									<span className="text-[#02D5E9]">

@@ -84,30 +84,30 @@ export function BubbleChart() {
 			clearInterval(intervalRef.current);
 		}
 
-		// Force simulation with continuous movement
+		// Force simulation with smoother, gentler movement
 		const simulation = d3
 			.forceSimulation<BubbleNode>(nodes)
-			.velocityDecay(0.4)
-			.alphaDecay(0.002) // Slower decay for longer movement
-			.force("charge", d3.forceManyBody().strength(30))
-			.force("center", d3.forceCenter(width / 2, height / 2).strength(0.03))
+			.velocityDecay(0.5)
+			.alphaDecay(0.02)
+			.force("charge", d3.forceManyBody().strength(10))
+			.force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
 			.force(
 				"collision",
 				d3
 					.forceCollide()
-					.radius((d) => (d as BubbleNode).radius + 8)
-					.strength(0.8)
+					.radius((d) => (d as BubbleNode).radius + 4)
+					.strength(1)
+					.iterations(2)
 			)
-			.force("x", d3.forceX(width / 2).strength(0.03))
-			.force("y", d3.forceY(height / 2).strength(0.03));
+			.force("x", d3.forceX(width / 2).strength(0.05))
+			.force("y", d3.forceY(height / 2).strength(0.05));
 
 		// Store simulation ref
 		simulationRef.current = simulation;
 
-		// Keep simulation alive with periodic alpha boosts for continuous movement
 		intervalRef.current = setInterval(() => {
-			simulation.alpha(0.15).restart();
-		}, 3000);
+			simulation.alpha(0.08).restart();
+		}, 4000);
 
 		// Tooltip for desktop only
 		const tooltip = d3
@@ -135,7 +135,6 @@ export function BubbleChart() {
 			.attr("class", "bubble")
 			.style("cursor", isMobileView ? "pointer" : "grab");
 
-		// Circles with gradient for better visual
 		const defs = svg.append("defs");
 		nodes.forEach((node, i) => {
 			const gradientId = `gradient-${i}`;
@@ -194,7 +193,6 @@ export function BubbleChart() {
 			.style("pointer-events", "none")
 			.style("text-shadow", "0 1px 3px rgba(0,0,0,0.8)");
 
-		// Drag behavior (desktop only)
 		if (!isMobileView) {
 			const drag = d3
 				.drag<SVGGElement, BubbleNode>()
@@ -218,17 +216,14 @@ export function BubbleChart() {
 			bubbles.call(drag);
 		}
 
-		// Get sentiment label and color
 		const getSentimentInfo = (score: number) => {
 			if (score > 0.1) return { label: "Bullish", color: "#52d769", emoji: "🚀" };
 			if (score < -0.1) return { label: "Bearish", color: "#ff3333", emoji: "📉" };
 			return { label: "Neutral", color: "#ffffff", emoji: "⚖️" };
 		};
 
-		// Interactions
 		bubbles
 			.on("mouseover", function (event: MouseEvent, d: BubbleNode) {
-				// Skip hover on mobile
 				if (isMobileView) return;
 
 				d3.select(this)
@@ -257,7 +252,6 @@ export function BubbleChart() {
 					.style("top", event.pageY - 15 + "px");
 			})
 			.on("mouseout", function (_event: MouseEvent, d: BubbleNode) {
-				// Skip hover on mobile
 				if (isMobileView) return;
 
 				d3.select(this)
@@ -272,7 +266,6 @@ export function BubbleChart() {
 				tooltip.style("opacity", 0);
 			})
 			.on("click", function (_event: MouseEvent, d: BubbleNode) {
-				// On mobile, open modal. On desktop, bounce effect.
 				if (isMobileView) {
 					setSelectedCoin(d);
 				} else {
@@ -334,6 +327,7 @@ export function BubbleChart() {
 						activePeriod={period}
 						onPeriodChange={setPeriod}
 						periods={["all", "30d", "7d", "24h"]}
+						centered
 					/>
 				</div>
 
