@@ -95,7 +95,7 @@ export function BubbleChart() {
 				"collision",
 				d3
 					.forceCollide()
-					.radius((d) => d.radius + 8)
+					.radius((d) => (d as BubbleNode).radius + 8)
 					.strength(0.8)
 			)
 			.force("x", d3.forceX(width / 2).strength(0.03))
