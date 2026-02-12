@@ -127,7 +127,7 @@ export function SentimentHistory() {
 				<PeriodFilter
 					activePeriod={period}
 					onPeriodChange={setPeriod}
-					periods={["all", "30d", "7d", "24h"]}
+					periods={["all", "30d", "7d", "48h"]}
 				/>
 			</div>
 
