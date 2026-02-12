@@ -116,8 +116,8 @@ export function SentimentHistory() {
 
 	return (
 		<GlassCard>
-			<div className="flex flex-col items-center gap-4 mb-6">
-				<div className="text-center">
+			<div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+				<div className="text-center sm:text-left">
 					<h3 className="text-lg font-semibold text-white">
 						Sentiment History
 					</h3>
@@ -128,7 +128,6 @@ export function SentimentHistory() {
 					activePeriod={period}
 					onPeriodChange={setPeriod}
 					periods={["all", "30d", "7d", "24h"]}
-					centered
 				/>
 			</div>
 

@@ -10,7 +10,7 @@ interface PeriodFilterProps {
 export function PeriodFilter({
 	activePeriod,
 	onPeriodChange,
-	periods = ["24h", "7d", "30d", "all"],
+	periods = ["48h", "7d", "30d", "all"],
 	centered = false,
 }: PeriodFilterProps) {
 	return (

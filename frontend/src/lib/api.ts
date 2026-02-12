@@ -34,7 +34,7 @@ export async function fetchNews(
 }
 
 export async function fetchSentiment(
-	period: string = "24h"
+	period: string = "48h"
 ): Promise<SentimentAggregate> {
 	const response = await fetch(
 		`${API_BASE_URL}/api/sentiment/aggregate?period=${period}`
@@ -60,7 +60,7 @@ export async function refreshNews(): Promise<RefreshResponse> {
 }
 
 export async function fetchCoinSentiment(
-	period: string = "24h"
+	period: string = "48h"
 ): Promise<CoinSentimentResponse> {
 	const response = await fetch(
 		`${API_BASE_URL}/api/coins/sentiment?period=${period}`
@@ -74,7 +74,7 @@ export async function fetchCoinSentiment(
 }
 
 export async function fetchCoinBubble(
-	period: string = "24h"
+	period: string = "48h"
 ): Promise<CoinSentiment[]> {
 	const response = await fetch(
 		`${API_BASE_URL}/api/coins/bubble?period=${period}`

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchCoinBubble } from "@/lib/api";
 
-export function useCoinBubble(period: string = "24h") {
+export function useCoinBubble(period: string = "48h") {
 	return useQuery({
 		queryKey: ["coinBubble", period],
 		queryFn: () => fetchCoinBubble(period),

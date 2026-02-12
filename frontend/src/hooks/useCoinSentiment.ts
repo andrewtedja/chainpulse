@@ -3,10 +3,10 @@ import { fetchCoinSentiment } from "@/lib/api";
 
 /**
  * Custom hook to fetch coin sentiment data
- * @param period - Time period filter ("24h", "7d", "30d", "all")
+ * @param period - Time period filter ("48h", "7d", "30d", "all")
  * @returns { data, isLoading, error } - React Query result
  */
-export function useCoinSentiment(period: string = "24h") {
+export function useCoinSentiment(period: string = "48h") {
 	return useQuery({
 		queryKey: ["coinSentiment", period], // Cache key (unique per period)
 		queryFn: () => fetchCoinSentiment(period),

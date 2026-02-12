@@ -47,7 +47,7 @@ export default function NewsPage() {
 							<PeriodFilter
 								activePeriod={period}
 								onPeriodChange={setPeriod}
-								periods={["all", "30d", "7d", "24h"]}
+								periods={["all", "30d", "7d", "48h"]}
 								centered
 							/>
 						</div>
@@ -64,12 +64,12 @@ export default function NewsPage() {
 								/>
 							</div>
 
-							<div className="flex justify-center flex-wrap gap-2">
+							<div className="flex justify-center sm:justify-start flex-wrap gap-2">
 								{["all", "positive", "neutral", "negative"].map((s) => (
 									<button
 										key={s}
 										onClick={() => setSentiment(s === "all" ? undefined : s)}
-										className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+										className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
 											(s === "all" && !sentiment) || sentiment === s
 												? "bg-[#02D5E9]/80 text-white"
 												: "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"

@@ -14,4 +14,4 @@ export interface SentimentAggregate {
   period: string;
 }
 
-export type Period = "24h" | "7d" | "30d" | "all";
+export type Period = "48h" | "7d" | "30d" | "all";

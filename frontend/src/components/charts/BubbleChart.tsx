@@ -311,8 +311,8 @@ export function BubbleChart() {
 	return (
 		<>
 			<GlassCard>
-				<div className="flex flex-col items-center gap-4 mb-4">
-					<div className="text-center">
+				<div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+					<div className="text-center sm:text-left">
 						<h3 className="text-lg font-semibold text-white">
 							News Sentiment Bubbles
 						</h3>
@@ -326,8 +326,7 @@ export function BubbleChart() {
 					<PeriodFilter
 						activePeriod={period}
 						onPeriodChange={setPeriod}
-						periods={["all", "30d", "7d", "24h"]}
-						centered
+						periods={["all", "30d", "7d", "48h"]}
 					/>
 				</div>
 

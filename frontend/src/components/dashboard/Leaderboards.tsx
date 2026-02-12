@@ -135,9 +135,9 @@ export function Leaderboards() {
 		<GlassCard>
 			<div
 				id="leaderboard"
-				className="flex flex-col items-center gap-4 mb-6"
+				className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
 			>
-				<div className="text-center">
+				<div className="text-center sm:text-left">
 					<h3 className="text-lg font-semibold text-[hsl(210,40%,98%)]">
 						Leaderboards
 					</h3>
@@ -151,7 +151,7 @@ export function Leaderboards() {
 				<PeriodFilter
 					activePeriod={period}
 					onPeriodChange={setPeriod}
-					periods={["all", "30d", "7d", "24h"]}
+					periods={["all", "30d", "7d", "48h"]}
 				/>
 			</div>
 

@@ -38,7 +38,7 @@ def get_news(
   Query params:
   - page: Page number (default: 1)
   - limit: Items per page (default: 12, max: 500)
-  - period: Time filter ("24h", "7d", "30d", "all")
+  - period: Time filter ("48h", "7d", "30d", "all")
   - sentiment: Filter by sentiment ("positive", "neutral", "negative")
   - search: Search query (searches title and content)
   """
@@ -67,8 +67,8 @@ def get_news(
   # Apply period filter
   if period:
       now = datetime.now(timezone.utc)
-      if period == "24h":
-          cutoff = now - timedelta(hours=24)
+      if period == "48h":
+          cutoff = now - timedelta(hours=48)
           query = query.filter(News.published_at >= cutoff)
       elif period == "7d":
           cutoff = now - timedelta(days=7)
@@ -80,7 +80,7 @@ def get_news(
           # No filter for "all"
           pass
       else:
-          raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+          raise HTTPException(400, "Invalid period. Use: 48h, 7d, 30d, or all")
 
   # Sentiment filter (p/n/neutral)
   if sentiment:
@@ -104,8 +104,8 @@ def get_news(
 
   total_query = db.query(News)
   if period and period != "all":
-      if period == "24h":
-          cutoff = now - timedelta(hours=24)
+      if period == "48h":
+          cutoff = now - timedelta(hours=48)
       elif period == "7d":
           cutoff = now - timedelta(days=7)
       elif period == "30d":
@@ -180,7 +180,7 @@ def refresh_news(db: Session = Depends(get_db), redis = Depends(get_redis)):
 
 @router.get("/api/sentiment/aggregate")
 def get_market_sentiment(
-    period: str = "24h",  # "24h", "7d", "30d", "all"
+    period: str = "48h",  # "48h", "7d", "30d", "all"
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ):
@@ -188,7 +188,7 @@ def get_market_sentiment(
   Get overall market sentiment for specified period.
 
   Query params:
-  - period: "24h" (default), "7d", "30d", "all"
+  - period: "48h" (default), "7d", "30d", "all"
 
   Returns:
   - Distribution: % positive/neutral/negative
@@ -211,8 +211,8 @@ def get_market_sentiment(
   # Calculate cutoff based on period
   now = datetime.now(timezone.utc)
 
-  if period == "24h":
-      cutoff = now - timedelta(hours=24)
+  if period == "48h":
+      cutoff = now - timedelta(hours=48)
   elif period == "7d":
       cutoff = now - timedelta(days=7)
   elif period == "30d":
@@ -220,7 +220,7 @@ def get_market_sentiment(
   elif period == "all":
       cutoff = None
   else:
-      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+      raise HTTPException(400, "Invalid period. Use: 48h, 7d, 30d, or all")
 
   # Query with optional date filter
   query = db.query(
@@ -294,12 +294,12 @@ def get_market_sentiment(
 
 
 @router.get('/api/coins/sentiment')
-def get_coins_sentiment(period:str = "24h",
+def get_coins_sentiment(period:str = "48h",
                         db: Session = Depends(get_db),
                         redis = Depends(get_redis),
                         ):
   '''API buat ngereturn top 5 bullish dan bearish coins
-    Params: period (24h and 7d)
+    Params: period (48h and 7d)
 
     Response:
     - ticker
@@ -323,8 +323,8 @@ def get_coins_sentiment(period:str = "24h",
   # Calculate cutoff based on period
   now = datetime.now(timezone.utc)
 
-  if period == "24h":
-      cutoff = now - timedelta(hours=24)
+  if period == "48h":
+      cutoff = now - timedelta(hours=48)
   elif period == "7d":
       cutoff = now - timedelta(days=7)
   elif period == "30d":
@@ -332,7 +332,7 @@ def get_coins_sentiment(period:str = "24h",
   elif period == "all":
       cutoff = None
   else:
-      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+      raise HTTPException(400, "Invalid period. Use: 48h, 7d, 30d, or all")
 
   query = db.query(
     Coin.symbol,
@@ -420,8 +420,8 @@ def get_coins_bubble(period: str = "all",
   # Calculate cutoff based on period
   now = datetime.now(timezone.utc)
 
-  if period == "24h":
-      cutoff = now - timedelta(hours=24)
+  if period == "48h":
+      cutoff = now - timedelta(hours=48)
   elif period == "7d":
       cutoff = now - timedelta(days=7)
   elif period == "30d":
@@ -429,7 +429,7 @@ def get_coins_bubble(period: str = "all",
   elif period == "all":
       cutoff = None
   else:
-      raise HTTPException(400, "Invalid period. Use: 24h, 7d, 30d, or all")
+      raise HTTPException(400, "Invalid period. Use: 48h, 7d, 30d, or all")
 
   query = db.query(
     Coin.symbol,

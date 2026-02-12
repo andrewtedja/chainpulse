@@ -30,19 +30,19 @@ export function NewsFeed() {
 	return (
 		<GlassCard>
 			<div className="space-y-4 mb-6">
-				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4">
 					<div className="text-center sm:text-left">
-						<h3 className="text-lg font-semibold text-white">
+						<h3 className="text-lg sm:text-base font-semibold text-white">
 							Latest Crypto News
 						</h3>
-						<p className="text-sm text-gray-400">
+						<p className="text-xs sm:text-sm text-gray-400">
 							Aggregated from top sources with AI sentiment analysis
 						</p>
 					</div>
 					<PeriodFilter
 						activePeriod={period}
 						onPeriodChange={setPeriod}
-						periods={["all", "30d", "7d", "24h"]}
+						periods={["all", "30d", "7d", "48h"]}
 					/>
 				</div>
 
@@ -58,12 +58,12 @@ export function NewsFeed() {
 						/>
 					</div>
 
-					<div className="inline-flex flex-wrap justify-center gap-2">
+					<div className="inline-flex flex-wrap justify-center sm:justify-start gap-2">
 						{["all", "positive", "neutral", "negative"].map((s) => (
 							<button
 								key={s}
 								onClick={() => setSentiment(s === "all" ? undefined : s)}
-								className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+								className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
 									(s === "all" && !sentiment) || sentiment === s
 										? "bg-[#02D5E9]/80 text-white"
 										: "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
