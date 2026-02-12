@@ -8,7 +8,7 @@ export function Footer() {
 					{/* Copyright */}
 					<div>
 						<p className="text-gray-400 text-sm">
-							© 2025 ChainPulse. All rights reserved.
+							© 2025 Chainpulse. All rights reserved.
 						</p>
 						<Badge
 							variant="outline"

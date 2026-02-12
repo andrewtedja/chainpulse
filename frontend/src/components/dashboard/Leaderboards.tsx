@@ -135,9 +135,9 @@ export function Leaderboards() {
 		<GlassCard>
 			<div
 				id="leaderboard"
-				className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+				className="flex flex-col items-center gap-4 mb-6"
 			>
-				<div>
+				<div className="text-center">
 					<h3 className="text-lg font-semibold text-[hsl(210,40%,98%)]">
 						Leaderboards
 					</h3>
@@ -156,7 +156,7 @@ export function Leaderboards() {
 			</div>
 
 			{/* Tabs */}
-			<div className="flex gap-2 mb-6">
+			<div className="flex justify-center gap-2 mb-6">
 				<button
 					onClick={() => setActiveTab("coins")}
 					className={`px-4 py-2 rounded-lg font-medium transition-all ${

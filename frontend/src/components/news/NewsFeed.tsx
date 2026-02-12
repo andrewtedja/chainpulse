@@ -30,8 +30,8 @@ export function NewsFeed() {
 	return (
 		<GlassCard>
 			<div className="space-y-4 mb-6">
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+					<div className="text-center sm:text-left">
 						<h3 className="text-lg font-semibold text-white">
 							Latest Crypto News
 						</h3>
@@ -46,7 +46,7 @@ export function NewsFeed() {
 					/>
 				</div>
 
-				<div className="flex flex-col sm:flex-row gap-3">
+				<div className="flex flex-col gap-3">
 					<div className="relative flex-1">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
 						<input
@@ -58,7 +58,7 @@ export function NewsFeed() {
 						/>
 					</div>
 
-					<div className="flex gap-2">
+					<div className="inline-flex flex-wrap justify-center gap-2">
 						{["all", "positive", "neutral", "negative"].map((s) => (
 							<button
 								key={s}

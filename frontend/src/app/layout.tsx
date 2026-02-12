@@ -19,15 +19,29 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<head>
-				<title>ChainPulse - AI-Powered Crypto Market Sentiment</title>
+				<title>ChainPulse | Read the Market Fast</title>
 				<meta
 					name="description"
 					content="Analyze how global news impacts crypto market mood swings using AI-powered sentiment analysis with FinBERT"
 				/>
 				<link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" />
-				<link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
-				<link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
-				<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+				<link
+					rel="icon"
+					type="image/png"
+					sizes="32x32"
+					href="/favicon/favicon-32x32.png"
+				/>
+				<link
+					rel="icon"
+					type="image/png"
+					sizes="16x16"
+					href="/favicon/favicon-16x16.png"
+				/>
+				<link
+					rel="apple-touch-icon"
+					sizes="180x180"
+					href="/favicon/apple-touch-icon.png"
+				/>
 				<link rel="manifest" href="/favicon/site.webmanifest" />
 			</head>
 			<body

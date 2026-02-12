@@ -12,7 +12,7 @@ export function PeriodFilter({
 	periods = ["24h", "7d", "30d", "all"],
 }: PeriodFilterProps) {
 	return (
-		<div className="flex items-center gap-1 p-1 bg-white/5 rounded-lg">
+		<div className="inline-flex items-center gap-1 p-1 bg-white/5 rounded-lg">
 			{periods.map((period) => {
 				const isActive = activePeriod === period;
 				return (
