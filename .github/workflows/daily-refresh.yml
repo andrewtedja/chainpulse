@@ -1,20 +1,19 @@
 name: Daily News Refresh
 
 on:
-  schedule:
-    # Runs every day at 00:00 UTC
-    - cron: "0 0 * * *"
-  workflow_dispatch:
+    schedule:
+        - cron: "0 0 * * 0"
+    workflow_dispatch:
 
 jobs:
-  refresh-news:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    refresh-news:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
 
-    steps:
-      - name: Trigger Backend Refresh
-        run: |
-          curl -X POST \
-            "${{ secrets.BACKEND_URL }}/api/cron/refresh" \
-            -H "Content-Type: application/json" \
-            -v
+        steps:
+            - name: Trigger Backend Refresh
+              run: |
+                  curl -X POST \
+                    "${{ secrets.BACKEND_URL }}/api/cron/refresh" \
+                    -H "Content-Type: application/json" \
+                    -v
