@@ -52,8 +52,9 @@ export function Hero() {
 						</h1>
 
 						<p className="text-neutral-400 text-lg max-w-xl leading-relaxed">
-							Analyze how millions of news articles and social signals impact
-							market mood using our finance-tuned LLMs.
+							Analyze how millions of news articles and social
+							signals impact market mood using our finance-tuned
+							LLMs.
 						</p>
 
 						<div className="flex flex-wrap gap-3 pt-4">
@@ -91,11 +92,13 @@ export function Hero() {
 								<p className="text-sm text-gray-400 font-medium">
 									Latest News Published:{" "}
 									<span className="text-[#02D5E9]">
-										{formatRelativeTime(newsData.data[0].published_at)}
+										{formatRelativeTime(
+											newsData.data[0].published_at,
+										)}
 									</span>
 								</p>
 								<p className="text-xs text-gray-500 mt-1">
-									Auto-refreshes daily
+									Auto-refreshes weekly
 								</p>
 							</div>
 						)}
@@ -108,7 +111,9 @@ export function Hero() {
 							<span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 							<RefreshCw
 								className={`w-5 h-5 mr-2 transition-transform duration-500 ${
-									isPending ? "animate-spin" : "group-hover:rotate-180"
+									isPending
+										? "animate-spin"
+										: "group-hover:rotate-180"
 								}`}
 							/>
 							{isPending ? "Refreshing..." : "Refresh Analysis"}
