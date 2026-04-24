@@ -13,7 +13,7 @@ import { useSentiment } from "@/hooks/useSentiment";
 import { SentimentGaugeSkeleton } from "@/components/ui/skeletons/SentimentGaugeSkeleton";
 
 export default function Home() {
-	const { data: sentimentData } = useSentiment("7d");
+	const { data: sentimentData } = useSentiment("all");
 
 	return (
 		<div className="min-h-screen">
@@ -32,7 +32,7 @@ export default function Home() {
 						{sentimentData ? (
 							<SentimentGauge
 								score={sentimentData.avg_sentiment}
-								period="7d"
+								period="all"
 								totalArticles={sentimentData.total_articles}
 							/>
 						) : (

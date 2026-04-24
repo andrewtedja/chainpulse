@@ -55,7 +55,7 @@ export function SentimentGauge({
 						Global Market Sentiment
 					</h3>
 					<p className="text-sm text-gray-400">
-						Based on {totalArticles} articles (last {period})
+						Based on {totalArticles} articles ({period === "all" ? "all time" : `last ${period}`})
 					</p>
 				</div>
 
